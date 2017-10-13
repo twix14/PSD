@@ -17,12 +17,12 @@ public interface IWideBox extends Remote {
 	 * number of the seat - Available-1, Occupied-2, Reserved-3
 	 * @return
 	 */
-	public List<String> seatsAvailable(int theatre) throws RemoteException;
+	public List<String> seatsAvailable(String theatre) throws RemoteException;
 
-	public boolean acceptSeat(int theatre, int seat) throws RemoteException;
+	public boolean acceptSeat(String theatre, int seat) throws RemoteException;
 	
-	public boolean reserveSeat(int theatre, int seat) throws RemoteException;
+	public boolean reserveSeat(String theatre, int seat) throws RemoteException;
 	
-	public boolean cancelSeat(int theatre, int seat) throws RemoteException;
+	public boolean cancelSeat(String theatre, int seat) throws RemoteException;
 	
 }
