@@ -47,7 +47,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 
 	@Override
-	public List<Theatre> search() throws RemoteException {
+	public Message search() throws RemoteException {
 		getDBStub();
 		
 		/**
@@ -58,7 +58,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 	
 	@Override
-	public List<String> seatsAvailable(String theatre) throws RemoteException {
+	public Message seatsAvailable(String theatre) throws RemoteException {
 		getWideBoxDB();
 		List<String> seats = wideboxDBStub.getAvailableSeats(theatre);
 		
@@ -77,28 +77,28 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 
 	@Override
-	public boolean acceptSeat(String theatre, int seat) throws RemoteException {
+	public Message acceptSeat(String theatre, int seat) throws RemoteException {
 		getWideBoxDB();
 		
 		
 
-		return false;
+		return null;
 	}
 
 	@Override
-	public boolean reserveSeat(String theatre, int seat) throws RemoteException {
+	public Message reserveSeat(String theatre, int seat) throws RemoteException {
 		// TODO Auto-generated method stub
 		
 		/**
 		 * EH PRECISO VER O TIMEOUT DE UMA RESERVA
 		 */
-		return false;
+		return null;
 	}
 
 	@Override
-	public boolean cancelSeat(String theatre, int seat)throws RemoteException {
+	public Message cancelSeat(String theatre, int seat)throws RemoteException {
 		// TODO Auto-generated method stub
-		return false;
+		return null;
 	}
 
 }
