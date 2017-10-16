@@ -48,7 +48,7 @@ public class QueryTheatreAction extends Action {
 					model.setHasTheatres(true);
 					
 					//Tem de vir o client id
-					model.setClientId(mens.getClientId());
+					model.setClientId(Integer.toString(mens.getClientId()));
 				}
 				else {
 					model.addMessage("No available Theatres.");
@@ -60,7 +60,7 @@ public class QueryTheatreAction extends Action {
 		} else
 			model.addMessage("Error validating the movie search");
 		
-		request.getRequestDispatcher("/addRefToMatch/TheatresResult.jsp").forward(request, response);
+		request.getRequestDispatcher("TheatresResult.jsp").forward(request, response);
 	}
 
 	

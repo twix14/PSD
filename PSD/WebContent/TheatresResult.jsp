@@ -13,7 +13,7 @@
 <title>Choose a Theatre</title>
 </head>
 <body>
-<h2>Associar árbitro a encontro</h2>
+<h2>Theatres Result</h2>
 <form action="chooseSeat" method="post">
    <c:if test="${model.hasTheatres}">
 	<p>Theatres</p>

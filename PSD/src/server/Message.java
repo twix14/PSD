@@ -7,12 +7,12 @@ import java.util.Map;
 public class Message implements Serializable {
 	
 	public static final String THEATRES = "theatres";
-	private static final String AVAILABLE = "available";
-	private static final String FULL = "theatres";
-	private static final String ACCEPT_OK = "theatres";
-	private static final String ACCEPT_ERROR = "theatres";
-	private static final String CANCEL_OK = "theatres";
-	private static final String CANCEL_ERROR = "theatres";
+	public static final String AVAILABLE = "available";
+	public static final String FULL = "theatres";
+	public static final String ACCEPT_OK = "theatres";
+	public static final String ACCEPT_ERROR = "theatres";
+	public static final String CANCEL_OK = "theatres";
+	public static final String CANCEL_ERROR = "theatres";
 	
 	private String status;
 	private String reservedSeat;
