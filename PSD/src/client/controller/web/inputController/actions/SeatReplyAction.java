@@ -64,7 +64,7 @@ public class SeatReplyAction extends Action{
 						default:
 							if (model.getResult().matches(REGEX)) {
 								
-								mens = widebox.reserveNewSeat(Integer.parseInt(model.getClientId()), Integer.parseInt(model.getResult()));
+								mens = widebox.reserveNewSeat(Integer.parseInt(model.getClientId()), model.getResult());
 								if (mens.getStatus().equals(Message.AVAILABLE)) {
 									model.setSeats(mens.getSeats());
 									model.setReservedSeat(mens.getReservedSeat());

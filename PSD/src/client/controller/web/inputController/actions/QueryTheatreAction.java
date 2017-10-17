@@ -19,19 +19,7 @@ import server.WideBoxServer;
 public class QueryTheatreAction extends Action {
 
 	//@EJB private ISportEventServicesRemote addRefToMatchHandler;
-	IWideBox widebox;
-	private static final int WIDEBOX_PORT = 1616;
-
-	protected IWideBox getWideBoxServer() {
-		try {
-			Registry registry = LocateRegistry.getRegistry(getRegistryHost(), WIDEBOX_PORT);
-			return (IWideBox) registry.lookup("WideBoxServer");
-		} catch (Exception e) {
-			System.err.println("Error in Servlet");
-			return null;
-		}
-	}
-	
+	private IWideBox widebox;
 	
 	@Override
 	public void process(HttpServletRequest request, HttpServletResponse response) 
@@ -39,6 +27,7 @@ public class QueryTheatreAction extends Action {
 
 		QueryTheatresModel model = createHelper(request);
 		request.setAttribute("model", model);
+		widebox.getInitialContext;
 		Message mens;
 		
 		if (validInput(model)) {

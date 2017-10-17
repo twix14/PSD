@@ -20,8 +20,8 @@ public interface IWideBox extends Remote {
 
 	public Message acceptSeat(int clientId) throws RemoteException;
 	
-	public Message reserveNewSeat(int clientId, int seat) throws RemoteException;
+	public Message reserveNewSeat(int clientId, String seat) throws RemoteException;
 	
-	public Message cancelSeat(int seat) throws RemoteException;
+	public Message cancelSeat(String seat) throws RemoteException;
 	
 }
