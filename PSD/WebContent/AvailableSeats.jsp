@@ -13,28 +13,33 @@
 <title>Choose a Seat</title>
 </head>
 <body>
+
+<style type="text/css">  
+#maintable {width: 800px; margin: 0 auto;}  
+  
+ #maintable td.red {color: #ff9933;}  
+ #maintable td.blue {color:#00F;} 
+ #maintable td.green {color:#00F;} 
+  
+</style>  
+
 <h2>Choose a Seat</h2>
 <form action="chooseSeat" method="post">
    <c:if test="${empty model.seats}">
 	<p>Seats</p>
-	<table style="float:left">
-	<tr>
-	    <th>Free Seats</th>
-	  </tr>
-	 <c:forEach var="theatre" items="${model.theatres}">
-		  <tr>
-		    <td>"${theatre.id}"</td>
-		  </tr>
-	  </c:forEach>
-	</table>
-	<table style="float:left">
-	<tr>
-	    <th>Occupied Seats</th>
-	  </tr>
-	 <c:forEach var="theatre" items="${model.theatres}">
-		  <tr>
-		    <td>"${theatre.id}"</td>
-		  </tr>
+	<table style="float:left" id= "maintables">
+		<tr>
+	    	<th>Occupied Seats</th>
+	    </tr>
+	 <c:forEach var="row" items="${model.seats}">
+		  <c:forEach var="seat" items="${row}">
+		  	<tr>
+		    	<td bgcolor="#FF0000">
+		    		<c:when test="${row == 'FREE'}">
+		    		</c:when>
+		    	</td>
+		  	</tr>
+	  	  </c:forEach>
 	  </c:forEach>
 	</table>
    </c:if>

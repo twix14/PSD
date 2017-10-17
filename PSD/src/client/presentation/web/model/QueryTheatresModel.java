@@ -25,8 +25,8 @@ public class QueryTheatresModel extends Model {
 	private String reservedSeat;
 	private String result;
 	private boolean hasTheatres;
-	private List<Theatre> theatres;
-	private Map<String, Integer> seats; 
+	private List<String> theatres;
+	private State[][] seats; 
 	
 	public void setMovie(String movie) {
 		this.movie = movie;	
@@ -73,28 +73,28 @@ public class QueryTheatresModel extends Model {
 		return hasTheatres;
 	}
 
-	public void setHasTheatres(boolean hasTheatres) {
+	public void setHasTheatrtheatrees(boolean hasTheatres) {
 		this.hasTheatres = hasTheatres;
 	}
 
-	public Iterable<Theatre> getTheatres () {
+	public List<String> getTheatres () {
 		return theatres;
 	}
 	
-	public void setTheatres(List<Theatre> ths) {
+	public void setTheatres(List<String> ths) {
 		this.theatres = ths;
 	}
 	
-	public Map<String, Integer> getSeats() {
+	public State[][] getSeats() {
 		return seats;
 	}
 
-	public void setSeats(Map<String, Integer> seats) {
+	public void setSeats(State[][] seats) {
 		this.seats = seats;
 	}
 
 	public void clearFields() {
-		movie = clientId = theatreId = "";
+		movie = clientId = theatreId = reservedSeat = result = "";
 		hasTheatres = false;
 	}
 	

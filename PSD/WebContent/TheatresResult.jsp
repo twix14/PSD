@@ -23,7 +23,7 @@
 	  </tr>
 	 <c:forEach var="theatre" items="${model.theatres}">
 		  <tr>
-		    <td>"${theatre.id}"</td>
+		    <td>"${theatre}"</td>
 		  </tr>
 	  </c:forEach>
 	</table>
