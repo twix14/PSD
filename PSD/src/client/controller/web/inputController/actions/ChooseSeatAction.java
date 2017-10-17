@@ -60,7 +60,7 @@ public class ChooseSeatAction extends Action {
 		private boolean validInput(QueryTheatresModel model) {
 			
 			return isFilled(model, model.getClientId(), "") && 
-					isFilled(model, model.getTheatreId(), "Theatre Id must be filler.");
+					isFilled(model, model.getTheatreId(), "Theatre Id must be filled.");
 			
 		}
 

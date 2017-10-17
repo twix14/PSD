@@ -23,6 +23,7 @@ public class QueryTheatresModel extends Model {
 	private String clientId;
 	private String theatreId;
 	private String reservedSeat;
+	private String result;
 	private boolean hasTheatres;
 	private List<Theatre> theatres;
 	private Map<String, Integer> seats; 
@@ -58,6 +59,14 @@ public class QueryTheatresModel extends Model {
 
 	public void setReservedSeat(String reservedSeat) {
 		this.reservedSeat = reservedSeat;
+	}
+
+	public String getResult() {
+		return result;
+	}
+
+	public void setResult(String result) {
+		this.result = result;
 	}
 
 	public boolean getHasTheatres() {
