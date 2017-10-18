@@ -248,7 +248,7 @@ public class WideBoxDB implements IWideBoxDB {
 			character = 'Z';
 			break;
 		}
-		return character;
+		return character; 
 	}
 
 
