@@ -60,6 +60,9 @@ import client.controller.web.inputController.actions.UnknownAction;
 @WebServlet(FrontController.ACTION_PATH + "/*")
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	
+	private static final int SERVER_PORT = 1616;
+	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
 	/**
@@ -105,6 +108,20 @@ public class FrontController extends HttpServlet {
 			result = actionHandlers.get("unknownAction");
 		return result;
 	}
+	
+	protected WideBoxServer getWideBoxServer() {
+		try {
+			Registry registry = LocateRegistry.getRegistry("WideBoxServer", SERVER_PORT);
+			return (WideBoxServer) registry.lookup("WideBoxServer");
+		} catch (Exception e) {
+			System.err.println("Error in Servlet");
+			return null;
+		}
+	}
+	
+	public InitialContext getInitialContex() {
+		return initialContext;
+	}
 
 	
 	/* (non-Javadoc)
@@ -126,6 +143,8 @@ public class FrontController extends HttpServlet {
 						actionHandlers.put(key.substring(7), (String) keyValue.getValue());
 				}
 			}
+		
+		actionHandlers.put("WideBoxServer", getWideBoxServer());
 		} catch (Exception e) {
 			// It was not able to load properties file.
 			// Bad luck, all action will be dispatched to the UnknownAction

@@ -18,10 +18,10 @@ public interface IWideBox extends Remote {
 	 */
 	public Message seatsAvailable(String theatre) throws RemoteException;
 
-	public Message acceptSeat(String theatre, int seat) throws RemoteException;
+	public Message acceptSeat(int clientId) throws RemoteException;
 	
-	public Message reserveSeat(String theatre, int seat) throws RemoteException;
+	public Message reserveNewSeat(int clientId, String seat) throws RemoteException;
 	
-	public Message cancelSeat(String theatre, int seat) throws RemoteException;
+	public Message cancelSeat(String seat) throws RemoteException;
 	
 }
