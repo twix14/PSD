@@ -30,8 +30,7 @@ public class QueryTheatreAction extends Action {
 		widebox.getInitialContext;
 		Message mens;
 		
-		if (validInput(model)) {
-			try {
+		try {
 				if (mens = widebox.search(model.getMovie()) && mens.getStatus().equals(Message.THEATRES)) {
 					model.setTheatres(mens.getTheatres());
 					model.setHasTheatres(true);
@@ -46,28 +45,8 @@ public class QueryTheatreAction extends Action {
 			} catch (Exception e) {
 				model.addMessage("Error trying to get the search result: " + e.getMessage());
 			}
-		} else
-			model.addMessage("Error validating the movie search");
 		
 		request.getRequestDispatcher("TheatresResult.jsp").forward(request, response);
 	}
 
-	
-	private boolean validInput(QueryTheatresModel model) {
-		
-		// check if designation is filled
-		return isFilled(model, model.getMovie(), "Movie name must be filled.");
-		
-	}
-
-
-	private QueryTheatresModel createHelper(HttpServletRequest request){
-		// Create the object model
-		QueryTheatresModel model = new QueryTheatresModel();
-
-		// fill it with data from the request
-		model.setMovie(request.getParameter("movie"));
-		
-		return model;
-	}	
 }

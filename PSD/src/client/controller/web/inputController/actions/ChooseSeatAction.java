@@ -14,7 +14,6 @@ import server.Message;
 
 public class ChooseSeatAction extends Action {
 	
-	//@EJB private ISportEventServicesRemote addRefToMatchHandler;
 		IWideBox widebox;
 		private static final int WIDEBOX_PORT = 1616;
 
@@ -45,7 +44,7 @@ public class ChooseSeatAction extends Action {
 						model.setReservedSeat(mens.getReservedSeat());
 					}
 					else {
-						model.addMessage("No available seats.");
+						model.addMessage("No available seats, session full.");
 					}
 				} catch (Exception e) {
 					model.addMessage("Error trying to the available seats: " + e.getMessage());

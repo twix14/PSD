@@ -17,6 +17,8 @@ import db.WideBoxDB;
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private static final long serialVersionUID = 240458129728788662L;
+	private static final int TIMEOUT = 15000;
+	
 	List<Pair<Session, Integer>> clientIds;
 	ReentrantLock lock = new ReentrantLock();
 	char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
@@ -98,7 +100,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		public void run() {
 			//timeout of 30 seconds
 			try {
-				Thread.sleep(30000);
+				Thread.sleep(TIMEOUT);
 				Message stateOfSeat = wideboxDBStub.get(seat);
 				if(stateOfSeat.getStatus().equals(State.RESERVED)) {
 					//change seat to free

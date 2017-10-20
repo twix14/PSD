@@ -43,22 +43,25 @@ public class SeatReplyAction extends Action{
 					switch(model.getResult()) {
 					
 						case "YES":
-								mens = widebox.acceptSeat(Integer.parseInt(model.getClientId()));
-								if (mens.getStatus().equals(Message.ACCEPT_OK)) {
-									model.addMessage("Your purchase is completed.");
-								}
-								else 
-									model.addMessage("Your reservation has experired(ACCEPT_ERROR).");
+							mens = widebox.acceptSeat(Integer.parseInt(model.getClientId()));
+							if (mens.getStatus().equals(Message.ACCEPT_OK)) {
+								model.addMessage("Your purchase is completed.");
+							}
+							else 
+								model.addMessage("Your reservation has experired(ACCEPT_ERROR).");
 								
+							request.getRequestDispatcher("Result.jsp").forward(request, response);
 							break;
 							
 						case "CAN":
-							mens = widebox.cancelSeat(Integer.parseInt(model.getClientId()));
+							mens = widebox.cancelSeat(model.getClientId());
 							if (mens.getStatus().equals(Message.CANCEL_OK)) {
 								model.addMessage("Your reservation is canceled.");
 							}
 							else 
 								model.addMessage("Your reservation has experied(CANCEL_ERROR).");
+							
+							request.getRequestDispatcher("Result.jsp").forward(request, response);	
 							break;
 							
 						default:
@@ -70,7 +73,7 @@ public class SeatReplyAction extends Action{
 									model.setReservedSeat(mens.getReservedSeat());
 								}
 								else 
-									model.addMessage("No available seats.");
+									model.addMessage("No available seats, session full.");
 							}
 								
 							break;
@@ -79,7 +82,7 @@ public class SeatReplyAction extends Action{
 							model.addMessage("Error trying to the available seats: " + e.getMessage());
 						}
 				} else
-					model.addMessage("Error validating the theatre pick");
+					model.addMessage("Please choose one option");
 				
 				request.getRequestDispatcher("AvailableSeats.jsp").forward(request, response);
 			}

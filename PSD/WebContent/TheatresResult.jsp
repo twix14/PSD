@@ -10,32 +10,36 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/resources/app.css"> 
+<script language="javascript"> 
+
+function proc(theatre){ 
+  <input type="hidden" name="theatreId" value=theatre/>
+} 
+
+</script> 
 <title>Choose a Theatre</title>
 </head>
 <body>
 <h2>Theatres Result</h2>
-<form action="chooseSeat" method="post">
+<form id="myForm" action="chooseSeat" method="post">
    <c:if test="${model.hasTheatres}">
 	<p>Theatres</p>
-	<table>
-	<tr>
-	    <th>Theatre Id</th>
-	  </tr>
-	 <c:forEach var="theatre" items="${model.theatres}">
-		  <tr>
-		    <td>"${theatre}"</td>
-		  </tr>
+	<ul style="list-style-type:disc">
+	<c:forEach var="theatre" items="${model.theatres}">
+		<li onclick='proc("${theatre}");myForm.submit();'>"${theatre}"</li>
 	  </c:forEach>
-	</table>
+	</ul>
    </c:if>
-   <div class="mandatory_field">
+   <!-- <div class="mandatory_field">
    		<label for="theatreId">Theatre Id:</label> 
    		<input type="text" name="theatreId" value=""/>
-    </div>
-   <input type="hidden" name="clientId" value="${model.clientId}"/>
+    </div> 
+   
    <div class="button" align="right">
    		<input type="submit" value="Choose Theatre">
    </div>
+   -->
+   <input type="hidden" name="clientId" value="${model.clientId}"/>
    <c:if test="${model.hasMessages}">
 	<p>Mensagens</p>
 	<ul>

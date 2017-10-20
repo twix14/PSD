@@ -1,10 +1,13 @@
 package client.presentation.web.inputController;
 
 import java.io.IOException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.servlet.ServletException;
@@ -15,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import client.controller.web.inputController.actions.Action;
 import client.controller.web.inputController.actions.UnknownAction;
+import server.WideBoxServer;
 
 
 /**
@@ -62,6 +66,7 @@ public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final int SERVER_PORT = 1616;
+	private static final int SERVER_IP = 1616;
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
@@ -120,7 +125,7 @@ public class FrontController extends HttpServlet {
 	}
 	
 	public InitialContext getInitialContex() {
-		return initialContext;
+		return context;
 	}
 
 	
@@ -144,7 +149,9 @@ public class FrontController extends HttpServlet {
 				}
 			}
 		
-		actionHandlers.put("WideBoxServer", getWideBoxServer());
+		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
+		actionHandlers.put("WideBoxServer", "rmi://" + Integer.toString(SERVER_IP) +":" + Integer.toString(SERVER_PORT) 
+																						+ "/WideBoxServer" );
 		} catch (Exception e) {
 			// It was not able to load properties file.
 			// Bad luck, all action will be dispatched to the UnknownAction

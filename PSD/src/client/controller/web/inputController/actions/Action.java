@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import client.presentation.web.model.Model;
+import db.State;
 
 /**
  * An abstract HTTP action request handler. 
@@ -53,6 +54,18 @@ public abstract class Action {
 		} catch (NumberFormatException e) {
 			return 0;
 		}
+	}
+	
+	protected boolean isState(Model help, String state, String message) {
+		try
+		   {
+		      State.valueOf(state);
+		      return true;
+		   }
+		   catch(IllegalArgumentException e)
+		   {
+		      return false;
+		   }
 	}
 
 

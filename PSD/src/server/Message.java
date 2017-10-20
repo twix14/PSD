@@ -2,7 +2,8 @@ package server;
 
 import java.io.Serializable;
 import java.util.List;
-import java.util.Map;
+
+import db.State;
 
 public class Message implements Serializable {
 
@@ -21,7 +22,7 @@ public class Message implements Serializable {
 	private String reservedSeat;
 	private int clientId;
 	private List<String> theatres;
-	private String[][] seats;
+	private State[][] seats;
 	private Session sess;
 		
 	public Message(String status) {
@@ -68,11 +69,11 @@ public class Message implements Serializable {
 		this.theatres = theatres;
 	}
 
-	public String[][] getSeats() {
+	public State[][] getSeats() {
 		return seats;
 	}
 
-	public void setSeats(String[][] seats) {
+	public void setSeats(State[][] seats) {
 		this.seats = seats;
 	}
 

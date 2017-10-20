@@ -7,6 +7,15 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="model" class="client.presentation.web.model.QueryTheatresModel" scope="request"/>
 <html>
+<style type="text/css">  
+#maintable {width: 800px; margin: 0 auto;}  
+  
+ #maintable td.red {color: #ff9933;}  
+ #maintable td.blue {color:#00F;} 
+ #maintable td.green {color:"green";} 
+  
+</style>  
+
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 <link rel="stylesheet" type="text/css" href="/resources/app.css"> 
@@ -14,30 +23,30 @@
 </head>
 <body>
 
-<style type="text/css">  
-#maintable {width: 800px; margin: 0 auto;}  
-  
- #maintable td.red {color: #ff9933;}  
- #maintable td.blue {color:#00F;} 
- #maintable td.green {color:#00F;} 
-  
-</style>  
+
 
 <h2>Choose a Seat</h2>
-<form action="chooseSeat" method="post">
+<form action="seatreply" method="post">
    <c:if test="${empty model.seats}">
 	<p>Seats</p>
-	<table style="float:left" id= "maintables">
+	<table id= "maintables">
 		<tr>
 	    	<th>Occupied Seats</th>
 	    </tr>
 	 <c:forEach var="row" items="${model.seats}">
 		  <c:forEach var="seat" items="${row}">
 		  	<tr>
-		    	<td bgcolor="#FF0000">
-		    		<c:when test="${row == 'FREE'}">
-		    		</c:when>
-		    	</td>
+		    	<c:when test="${row == 'FREE'}">
+		    		<td class="green">	    		</td>
+		    	</c:when>
+		    	<c:when test="${row == 'OCCUPIED'}">
+		    		<td class="blue">	    		</td>
+		    	</c:when>
+		    	<c:when test="${row == 'RESERVED'}">
+		    		<td class="red">	    		</td>
+		    	</c:when>
+		    	
+		    	
 		  	</tr>
 	  	  </c:forEach>
 	  </c:forEach>
