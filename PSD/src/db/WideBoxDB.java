@@ -125,15 +125,20 @@ public class WideBoxDB implements IWideBoxDB {
 			return DELETE_NOT_OK;
 	}
 
-	public List<String> listTheatres() throws IOException {
+	public List<String> listTheatres() {
+		List<String> teatros = new ArrayList<String>();
+		try {
 		BufferedReader br = new BufferedReader(new FileReader("Teatros.txt"));
 		String l = br.readLine();
-		List<String> teatros = new ArrayList<String>();
+		
 		while(l!=null) {
 			teatros.add(l);
 			l = br.readLine();
 		}
 		br.close();
+		} catch (IOException e) {
+			
+		}
 		return teatros;
 	}
 

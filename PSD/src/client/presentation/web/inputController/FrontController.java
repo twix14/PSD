@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import client.controller.web.inputController.actions.Action;
 import client.controller.web.inputController.actions.UnknownAction;
+import server.IWideBox;
 import server.WideBoxServer;
 
 
@@ -65,11 +66,12 @@ import server.WideBoxServer;
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
-	private static final int SERVER_PORT = 1616;
-	private static final int SERVER_IP = 1616;
+	private static final String SERVER_PORT = "1616";
+	private static final String SERVER_IP = "10.101.148.217";
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
+	private static IWideBox wb;
 	/**
 	 * Maps http actions to the objects that are going to handle them
 	 */
@@ -114,14 +116,8 @@ public class FrontController extends HttpServlet {
 		return result;
 	}
 	
-	protected WideBoxServer getWideBoxServer() {
-		try {
-			Registry registry = LocateRegistry.getRegistry("WideBoxServer", SERVER_PORT);
-			return (WideBoxServer) registry.lookup("WideBoxServer");
-		} catch (Exception e) {
-			System.err.println("Error in Servlet");
-			return null;
-		}
+	public static IWideBox getWideBoxServer() {
+		return wb;
 	}
 	
 	public InitialContext getInitialContex() {
@@ -147,11 +143,13 @@ public class FrontController extends HttpServlet {
 					if(key.startsWith("appRoot"))
 						actionHandlers.put(key.substring(7), (String) keyValue.getValue());
 				}
+				
+				Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
+				wb = (IWideBox) registry.lookup("WideBoxServer");
 			}
 		
 		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
-		actionHandlers.put("WideBoxServer", "rmi://" + Integer.toString(SERVER_IP) +":" + Integer.toString(SERVER_PORT) 
-																						+ "/WideBoxServer" );
+		//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );
 		} catch (Exception e) {
 			// It was not able to load properties file.
 			// Bad luck, all action will be dispatched to the UnknownAction

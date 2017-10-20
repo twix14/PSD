@@ -74,7 +74,7 @@ public class QueryTheatresModel extends Model {
 		return hasTheatres;
 	}
 
-	public void setHasTheatrtheatrees(boolean hasTheatres) {
+	public void setHasTheatres(boolean hasTheatres) {
 		this.hasTheatres = hasTheatres;
 	}
 

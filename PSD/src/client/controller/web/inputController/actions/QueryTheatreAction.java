@@ -10,6 +10,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
 import server.IWideBox;
 import server.Message;
@@ -25,13 +26,14 @@ public class QueryTheatreAction extends Action {
 	public void process(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 
-		QueryTheatresModel model = createHelper(request);
+		QueryTheatresModel model = new QueryTheatresModel();
 		request.setAttribute("model", model);
-		widebox.getInitialContext;
+		IWideBox widebox = FrontController.getWideBoxServer();
 		Message mens;
 		
 		try {
-				if (mens = widebox.search(model.getMovie()) && mens.getStatus().equals(Message.THEATRES)) {
+			mens = widebox.search();
+				if (mens !=null && mens.getStatus().equals(Message.THEATRES)) {
 					model.setTheatres(mens.getTheatres());
 					model.setHasTheatres(true);
 					
