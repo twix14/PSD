@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.omg.PortableServer.POAManagerPackage.State;
+import db.*;
 
 import db.WideBoxDB;
 
@@ -33,13 +33,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	@Override
 	public Message search() throws RemoteException {
 		Message m = new Message(Message.THEATRES);
-		m.settheaters(wideboxDBStub.list());
+		m.setTheatres(wideboxDBStub.listTheatres());
 		return m;
 	}
 	
 	@Override
 	public Message seatsAvailable(String theater) throws RemoteException {
-		State[][] seats = wideboxDBStub.listSeats(theater);
+		Status[][] seats = wideboxDBStub.listSeats(theater);
 		List<String> available;
 		
 		if(!(available = getEmptySeats(seats)).isEmpty()) {
@@ -65,24 +65,35 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * Like this you can only assign one seat for any theater, at a time
 	 * REVIEW, COULD BE A PERFORMANCE ISSUE
 	 * @param theater
+	 * @throws RemoteException 
 	 */
-	private Message assignSeat(String theater, List<String> available, UUID id) {
-		lock.lock();
-		try {
-			//choose free seat at random
-			Random rand = new Random();
-			String seat = available.get(rand.nextInt(available.size()));
-			Message response = wideboxDBStub.put(theater + "-" + 
-					seat, State.RESERVED);
-			Session sess = new Session(id);
-			sess.addSeat(seat);
-			response.setSession(sess);
-			new TimeoutThread(theater + "-" + seat);
-			return response;
-			
-		} finally {
-			lock.unlock();
-		}
+	private Message assignSeat(String theater, List<String> available, UUID id) throws RemoteException {
+		if(available.size() < 10) {
+		
+			lock.lock();
+			try {
+				return assignSeatAux(theater, available, id);
+				
+			} finally {
+				lock.unlock();
+			}
+		
+		} else 
+			return assignSeatAux(theater, available, id);
+	}
+	
+	public Message assignSeatAux(String theater, List<String> available, UUID id) throws RemoteException {
+		//choose free seat at random
+		Random rand = new Random();
+		String seat = available.get(rand.nextInt(available.size()));
+		String resp = wideboxDBStub.put(theater + "-" + 
+				seat, Status.RESERVED);
+		Message response = new Message(resp);
+		Session sess = new Session(id);
+		sess.addSeat(seat);
+		response.setSession(sess);
+		new TimeoutThread(theater + "-" + seat);
+		return response;
 	}
 	
 	/**
@@ -101,12 +112,15 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			//timeout of 30 seconds
 			try {
 				Thread.sleep(TIMEOUT);
-				Message stateOfSeat = wideboxDBStub.get(seat);
-				if(stateOfSeat.getStatus().equals(State.RESERVED)) {
+				Status state = wideboxDBStub.get(seat);
+				if(state.equals(Status.RESERVED)) {
 					//change seat to free
-					Message ok = wideboxDBStub.delete(seat);
+					wideboxDBStub.delete(seat);
 				}
 			} catch (InterruptedException e) {
+				e.printStackTrace();
+			} catch (RemoteException e) {
+				System.err.println("Can't connect to the DB");
 				e.printStackTrace();
 			}
 			
@@ -120,33 +134,16 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * @param seats
 	 * @return
 	 */
-	private List<String> getEmptySeats(State[][] seats){
+	private List<String> getEmptySeats(Status[][] seats){
 		List<String> empty = new LinkedList<>();
 		
 		for(int i = 0; i < seats.length; i++)
 			for(int j = 0; i < seats[i].length; j++) {
-				if(seats[i][j].equals(State.FREE))
+				if(seats[i][j].equals(Status.FREE))
 					empty.add(new String(String.valueOf(alphabet[i]) + j));
 			}
 		
 		return empty;
-	}
-
-	@Override
-	public Message acceptSeat(String theater, int seat) throws RemoteException {
-		
-
-		return null;
-	}
-
-	@Override
-	public Message reserveSeat(String theater, int seat) throws RemoteException {
-		// TODO Auto-generated method stub
-		
-		/**
-		 * EH PRECISO VER O TIMEOUT DE UMA RESERVA
-		 */
-		return null;
 	}
 
 	@Override
@@ -156,15 +153,16 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 
 	@Override
-	public Message reserveNewSeat(int clientId, int seat) throws RemoteException {
+	public Message reserveNewSeat(int clientId, String seat) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Message cancelSeat(int seat) throws RemoteException {
+	public Message cancelSeat(String seat) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 }
+

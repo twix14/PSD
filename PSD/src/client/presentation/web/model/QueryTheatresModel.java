@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import db.State;
+import db.Status;
 import server.Theatre;
 
 //import facade.dto.DiscountDTO;
@@ -27,7 +27,7 @@ public class QueryTheatresModel extends Model {
 	private String result;
 	private boolean hasTheatres;
 	private List<String> theatres;
-	private State[][] seats; 
+	private Status[][] seats; 
 	
 	public void setMovie(String movie) {
 		this.movie = movie;	
@@ -86,11 +86,11 @@ public class QueryTheatresModel extends Model {
 		this.theatres = ths;
 	}
 	
-	public State[][] getSeats() {
+	public Status[][] getSeats() {
 		return seats;
 	}
 
-	public void setSeats(State[][] seats) {
+	public void setSeats(Status[][] seats) {
 		this.seats = seats;
 	}
 

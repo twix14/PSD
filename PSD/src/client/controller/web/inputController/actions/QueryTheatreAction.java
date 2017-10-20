@@ -18,9 +18,6 @@ import server.Theatre;
 import server.WideBoxServer;
 
 public class QueryTheatreAction extends Action {
-
-	//@EJB private ISportEventServicesRemote addRefToMatchHandler;
-	private IWideBox widebox;
 	
 	@Override
 	public void process(HttpServletRequest request, HttpServletResponse response) 
@@ -48,7 +45,7 @@ public class QueryTheatreAction extends Action {
 				model.addMessage("Error trying to get the search result: " + e.getMessage());
 			}
 		
-		request.getRequestDispatcher("TheatresResult.jsp").forward(request, response);
+		request.getRequestDispatcher("/WEB-INF/TheatresResult.jsp").forward(request, response);
 	}
 
 }

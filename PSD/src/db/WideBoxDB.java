@@ -16,7 +16,7 @@ import java.util.HashMap;
 
 public class WideBoxDB implements IWideBoxDB {
 
-	private HashMap<String, State> map;
+	private HashMap<String, Status> map;
 
 	private static final String PUT_OK = "put_ok";
 	private static final String PUT_OCC = "lugar ja esta ocupado";
@@ -24,13 +24,13 @@ public class WideBoxDB implements IWideBoxDB {
 	private static final String DELETE_OK = "delete_ok";
 	private static final String DELETE_NOT_OK = "delete_not_ok";
 
-	public String put(String key, State value) throws RemoteException {
+	public String put(String key, Status value) throws RemoteException {
 
-		if(map.get(key).equals(State.OCCUPIED)) {
+		if(map.get(key).equals(Status.OCCUPIED)) {
 			return PUT_OCC;
-		} else if (map.get(key).equals(State.RESERVED) && value.equals(State.RESERVED)) {
+		} else if (map.get(key).equals(Status.RESERVED) && value.equals(Status.RESERVED)) {
 			return PUT_RES;
-		} else if (map.get(key).equals(State.RESERVED) && value.equals(State.OCCUPIED)) {
+		} else if (map.get(key).equals(Status.RESERVED) && value.equals(Status.OCCUPIED)) {
 			map.remove(key);
 			map.put(key, value);
 			try {
@@ -43,7 +43,7 @@ public class WideBoxDB implements IWideBoxDB {
 
 			return PUT_OK;
 			//TODO TENHO DUVIDAS NESTE PQ NAO SEI SE É POSSIVEL
-		} else if(map.get(key).equals(State.RESERVED) && value.equals(State.FREE)) {
+		} else if(map.get(key).equals(Status.RESERVED) && value.equals(Status.FREE)) {
 			map.remove(key);
 			map.put(key, value);
 			try {
@@ -54,7 +54,7 @@ public class WideBoxDB implements IWideBoxDB {
 				e.printStackTrace();
 			}
 			return PUT_OK;
-		} else if(map.get(key).equals(State.FREE) && value.equals(State.RESERVED)) {
+		} else if(map.get(key).equals(Status.FREE) && value.equals(Status.RESERVED)) {
 			map.remove(key);
 			map.put(key, value);
 			try {
@@ -65,7 +65,7 @@ public class WideBoxDB implements IWideBoxDB {
 				e.printStackTrace();
 			}
 			return PUT_OK;
-		} else if(map.get(key).equals(State.FREE) && value.equals(State.FREE)) {
+		} else if(map.get(key).equals(Status.FREE) && value.equals(Status.FREE)) {
 			return PUT_OK;
 		} else {
 			//When the seat is free, and you are changing it to occupied
@@ -83,7 +83,7 @@ public class WideBoxDB implements IWideBoxDB {
 	}
 
 	//TODO NAO SEI SE VAI BUSCAR AO FICHEIRO OU NAO
-	public State get(String key) throws RemoteException {
+	public Status get(String key) throws RemoteException {
 		/*  //read from file 
 	    try{
 	        File toRead=new File("Seats.txt");
@@ -112,7 +112,7 @@ public class WideBoxDB implements IWideBoxDB {
 	public String delete(String key) throws RemoteException {
 		if (map.get(key) != null) {
 			map.remove(key);
-			map.put(key, State.FREE);
+			map.put(key, Status.FREE);
 			try {
 				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
 				bw.write("delete " + key);
@@ -142,8 +142,8 @@ public class WideBoxDB implements IWideBoxDB {
 		return teatros;
 	}
 
-	public State[][] listSeats(String theatre) throws RemoteException {
-		State [][] listSeats = new State[26][40];
+	public Status[][] listSeats(String theatre) throws RemoteException {
+		Status [][] listSeats = new Status[26][40];
 		int coluna = 0;
 		for(int i = 0; i < 26; i++)
 			for (int j = 0; j < 40; j++) {
@@ -158,14 +158,14 @@ public class WideBoxDB implements IWideBoxDB {
 
 	@SuppressWarnings("unused")
 	private void loadDB () {
-		this.map = new HashMap<String,State>();
+		this.map = new HashMap<String,Status>();
 		int coluna = 0;
 		for(int k = 1; k <= 1500; k++) {
 			for(int i = 0; i < 26; i++)
 				for (int j = 0; j < 40; j++) {
 					char linha = getCharLine(i);
 					coluna = j+1;
-					map.put("T"+k+"-"+linha+coluna, State.FREE);
+					map.put("T"+k+"-"+linha+coluna, Status.FREE);
 				}
 		}
 	}

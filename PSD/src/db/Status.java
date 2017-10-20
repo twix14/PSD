@@ -1,6 +1,6 @@
 package db;
 
-public enum State {
+public enum Status {
 	FREE, RESERVED, OCCUPIED
 }
   
