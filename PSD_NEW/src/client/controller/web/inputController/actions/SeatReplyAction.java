@@ -8,6 +8,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
 import server.IWideBox;
 import server.Message;
@@ -15,19 +16,11 @@ import server.Message;
 public class SeatReplyAction extends Action{
 
 	//@EJB private ISportEventServicesRemote addRefToMatchHandler;
-			IWideBox widebox;
+			
 			private static final int WIDEBOX_PORT = 1616;
 			private static final String REGEX = "[A-Z][1-40]";
 
-			protected IWideBox getWideBoxServer() {
-				try {
-					Registry registry = LocateRegistry.getRegistry(getRegistryHost(), WIDEBOX_PORT);
-					return (IWideBox) registry.lookup("WideBoxServer");
-				} catch (Exception e) {
-					System.err.println("Error in Servlet");
-					return null;
-				}
-			}
+			IWideBox widebox = FrontController.getWideBoxServer();
 			
 			
 			@Override

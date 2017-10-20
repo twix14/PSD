@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
-    <wb-module deploy-name="PSD">
+    <wb-module deploy-name="PSD_NEW">
         <wb-resource deploy-path="/" source-path="/WebContent" tag="defaultRootSource"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <property name="context-root" value="PSD"/>
-        <property name="java-output-path" value="/PSD/build/classes"/>
+        <property name="java-output-path" value="/PSD_NEW/build/classes"/>
+        <property name="context-root" value="PSD_NEW"/>
     </wb-module>
 </project-modules>

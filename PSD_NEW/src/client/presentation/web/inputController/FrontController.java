@@ -130,24 +130,16 @@ public class FrontController extends HttpServlet {
 	 */
 	@Override
 	public void init() {
-		String propertiesFileName = "/WEB-INF/app.properties";
 		actionHandlers = new HashMap<>();
 		actionHandlers.put("unknownAction", "java:module/UnknownAction");
+		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");
+		actionHandlers.put("/action/Theatres/QueryTheatre", "java:module/QueryTheatreAction");
+		//actionHandlers.put("", value)
 		appProperties = new Properties();
 		try {
 			context = new InitialContext();
-			appProperties.load(getClass().getResourceAsStream(propertiesFileName)); 
-			for (Entry<Object, Object> keyValue : appProperties.entrySet()) {
-				if (keyValue.getKey() instanceof String) {
-					String key = (String) keyValue.getKey();
-					if(key.startsWith("appRoot"))
-						actionHandlers.put(key.substring(7), (String) keyValue.getValue());
-				}
-				
-				Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
-				wb = (IWideBox) registry.lookup("WideBoxServer");
-			}
-		
+			//Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
+			//wb = (IWideBox) registry.lookup("WideBoxServer");
 		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
 		//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );
 		} catch (Exception e) {
