@@ -21,16 +21,19 @@ function proc(theatre){
 </head>
 <body>
 <h2>Theatres Result</h2>
-<form id="myForm" action="chooseSeat" method="post">
+<form id="myForm" action="action/chooseSeat" method="post">
    <c:if test="${model.hasTheatres}">
 	<p>Theatres</p>
 	<ul style="list-style-type:disc">
 	<c:forEach var="theatre" items="${model.theatres}">
-		<li onclick='proc("${theatre}");myForm.submit();'>"${theatre}"</li>
+		<!-- <li onclick='proc("${theatre}");myForm.submit();'>${theatre}</li> -->
+		
+		<li >${theatre}</li>
+		
 	  </c:forEach>
 	</ul>
-   </c:if>
-   <!-- <div class="mandatory_field">
+   </c:if>  
+   <div class="mandatory_field">
    		<label for="theatreId">Theatre Id:</label> 
    		<input type="text" name="theatreId" value=""/>
     </div> 
@@ -38,7 +41,8 @@ function proc(theatre){
    <div class="button" align="right">
    		<input type="submit" value="Choose Theatre">
    </div>
-   -->
+   
+   
    <input type="hidden" name="clientId" value="${model.clientId}"/>
    <c:if test="${model.hasMessages}">
 	<p>Mensagens</p>

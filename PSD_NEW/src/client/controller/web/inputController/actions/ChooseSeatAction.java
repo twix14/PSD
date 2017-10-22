@@ -14,11 +14,6 @@ import server.IWideBox;
 import server.Message;
 
 public class ChooseSeatAction extends Action {
-	
-		private static final int WIDEBOX_PORT = 1616;
-
-		IWideBox widebox = FrontController.getWideBoxServer();
-		
 		
 		@Override
 		public void process(HttpServletRequest request, HttpServletResponse response) 
@@ -26,6 +21,7 @@ public class ChooseSeatAction extends Action {
 
 			QueryTheatresModel model = createHelper(request);
 			request.setAttribute("model", model);
+			IWideBox widebox = FrontController.getWideBoxServer();
 			Message mens;
 			
 			if (validInput(model)) {
@@ -50,8 +46,7 @@ public class ChooseSeatAction extends Action {
 		
 		private boolean validInput(QueryTheatresModel model) {
 			
-			return isFilled(model, model.getClientId(), "") && 
-					isFilled(model, model.getTheatreId(), "Theatre Id must be filled.");
+			return isFilled(model, model.getTheatreId(), "Theatre Id must be filled.");
 			
 		}
 

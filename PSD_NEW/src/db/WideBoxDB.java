@@ -1,6 +1,12 @@
 package db;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import server.WideBoxImpl;
+import server.WideBoxServer;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,19 +16,40 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 
-public class WideBoxDB implements IWideBoxDB {
+public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
-	private HashMap<String, Status> map;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	private ConcurrentHashMap<String, Status> map;
+	private File log;
+	
+	private static final int NRTH = 300;
+	private static final int NRRW = 26;
+	private static final int NRCL = 40;
+	
 
 	private static final String PUT_OK = "put_ok";
 	private static final String PUT_OCC = "lugar ja esta ocupado";
 	private static final String PUT_RES = "lugar ja esta reservado";
 	private static final String DELETE_OK = "delete_ok";
 	private static final String DELETE_NOT_OK = "delete_not_ok";
+	
+	protected WideBoxDB() throws RemoteException {
+		super();
+		loadDB();
+		log = new File("log.txt");
+		// TODO Auto-generated constructor stub
+	}
 
 	public String put(String key, Status value) throws RemoteException {
 
@@ -127,7 +154,23 @@ public class WideBoxDB implements IWideBoxDB {
 
 	public List<String> listTheatres() {
 		List<String> teatros = new ArrayList<String>();
-		try {
+		int coluna = 0;
+		Status curr = null;
+		for(int k = 1; k <= NRTH; k++) {
+			label:
+			for(int i = 0; i < NRRW; i++)
+				for (int j = 0; j < NRCL; j++) {
+					char linha = getCharLine(i);
+					coluna = j+1;
+					curr = map.get("T"+k+"-"+linha+coluna); 
+					if (curr == Status.FREE ) {
+						teatros.add("T"+k);
+						break label;
+					}
+				}
+		}
+		return teatros;
+		/*try {
 		BufferedReader br = new BufferedReader(new FileReader("Teatros.txt"));
 		String l = br.readLine();
 		
@@ -139,14 +182,14 @@ public class WideBoxDB implements IWideBoxDB {
 		} catch (IOException e) {
 			
 		}
-		return teatros;
+		return teatros;*/
 	}
 
 	public Status[][] listSeats(String theatre) throws RemoteException {
-		Status [][] listSeats = new Status[26][40];
+		Status [][] listSeats = new Status[NRRW][NRCL];
 		int coluna = 0;
-		for(int i = 0; i < 26; i++)
-			for (int j = 0; j < 40; j++) {
+		for(int i = 0; i < NRRW; i++)
+			for (int j = 0; j < NRCL; j++) {
 				char linha = getCharLine(i);
 				coluna = j+1;
 				listSeats[i][j] = map.get(theatre+"-"+linha+coluna);
@@ -156,13 +199,13 @@ public class WideBoxDB implements IWideBoxDB {
 
 	}
 
-	@SuppressWarnings("unused")
+	//@SuppressWarnings("unused")
 	private void loadDB () {
-		this.map = new HashMap<String,Status>();
+		this.map = new ConcurrentHashMap<String, Status>(NRTH * NRRW * NRCL);
 		int coluna = 0;
-		for(int k = 1; k <= 1500; k++) {
-			for(int i = 0; i < 26; i++)
-				for (int j = 0; j < 40; j++) {
+		for(int k = 1; k <= NRTH; k++) {
+			for(int i = 0; i < NRRW; i++)
+				for (int j = 0; j < NRCL; j++) {
 					char linha = getCharLine(i);
 					coluna = j+1;
 					map.put("T"+k+"-"+linha+coluna, Status.FREE);

@@ -1,15 +1,17 @@
 package server;
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+import db.IWideBoxDB;
 import db.WideBoxDB;
 
 public class WideBoxServer {
 
-	private static final int WIDEBOXCLIENT_PORT = 1616;
-	private static final int WIDEBOXDB_PORT = 1717;
+	private static final int WIDEBOXCLIENT_PORT = 5000;
+	private static final int WIDEBOXDB_PORT = 5001;
 
 	public static void main(String[] args) throws Exception {
 
@@ -20,25 +22,30 @@ public class WideBoxServer {
 	public WideBoxServer(String[] args) {
 		System.out.println("Starting the server...");
 
-		WideBoxDB wideboxDBStub = null;
-		WideBoxImpl widebox = null;
+		IWideBoxDB wideboxDBStub = null;
+		IWideBox widebox = null;
 		String ipDB = "127.0.0.1";
 
 		try {
-			Registry registry = LocateRegistry.getRegistry(ipDB, WIDEBOXDB_PORT);
-			wideboxDBStub = (WideBoxDB) registry.lookup("WideBoxDB");
-			widebox = new WideBoxImpl(wideboxDBStub);
+			Registry registry = LocateRegistry.getRegistry("192.168.43.35", WIDEBOXDB_PORT);
+			wideboxDBStub = (IWideBoxDB) registry.lookup("WideBoxDBServer");
+			//widebox = new WideBoxImpl();
 		} catch (RemoteException e) {
-			/*
-			 * abrir nova conexao de db, e criar nova implementacao para enviar conexoes
-			 */
-		} catch (Exception e) {
-			System.err.println("Error in Impl");
+			
+			System.err.println("Error in getting registry");
+			 
+		} catch (NotBoundException e) {
+			System.err.println("Error in getting the WideBoxDB");
 		}
 
 		try {
+			widebox = new WideBoxImpl(wideboxDBStub);
 			Registry registry = LocateRegistry.createRegistry(WIDEBOXCLIENT_PORT);
 			registry.rebind("WideBoxServer", widebox);
+		} catch (RemoteException e) {
+			
+			System.err.println("Error in creating the WideBoxServer registry");
+			 
 		} catch (Exception e) {
 			System.err.println("Widebox - Error trying to start the server!");
 		}

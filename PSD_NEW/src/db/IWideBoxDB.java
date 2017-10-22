@@ -14,7 +14,7 @@ public interface IWideBoxDB extends Remote {
 
 	public String delete(String key) throws RemoteException;
 	
-	public List<String> listTheatres() throws RemoteException, IOException;
+	public List<String> listTheatres() throws RemoteException;
 	
 	public Status[][] listSeats(String theatre) throws RemoteException;
 	

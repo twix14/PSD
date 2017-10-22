@@ -17,9 +17,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import client.controller.web.inputController.actions.Action;
+import client.controller.web.inputController.actions.ChooseSeatAction;
+import client.controller.web.inputController.actions.QueryTheatreAction;
 import client.controller.web.inputController.actions.UnknownAction;
 import server.IWideBox;
-import server.WideBoxServer;
 
 
 /**
@@ -66,8 +67,8 @@ import server.WideBoxServer;
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
-	private static final String SERVER_PORT = "1616";
-	private static final String SERVER_IP = "10.101.148.217";
+	private static final String SERVER_PORT = "5000";
+	private static final String SERVER_IP = "192.168.43.35";
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
@@ -84,12 +85,25 @@ public class FrontController extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String actionURL = request.getPathInfo();
-		String actionJNDI = getActionHandlerAddress(ACTION_PATH + actionURL);
-		Action actionCommand;
-		try {
-			actionCommand = (Action) context.lookup(actionJNDI);
-		} catch (NamingException e) {
+		//String actionJNDI = getActionHandlerAddress(ACTION_PATH + actionURL);
+		Action actionCommand = null;
+		switch (actionURL) {
+		
+		case "/QueryTheatre":
+			actionCommand = new QueryTheatreAction();
+			break;
+			
+		case "/Theatres/SeatReply":
+			
+			break;
+			
+		case "/ChooseSeat":
+			actionCommand = new ChooseSeatAction();
+			break;
+			
+		default:
 			actionCommand = new UnknownAction();
+			break;
 		}
 		actionCommand.process(request, response);
 	}
@@ -123,7 +137,7 @@ public class FrontController extends HttpServlet {
 	public InitialContext getInitialContex() {
 		return context;
 	}
-
+	
 	
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#init()
@@ -133,12 +147,13 @@ public class FrontController extends HttpServlet {
 		actionHandlers = new HashMap<>();
 		actionHandlers.put("unknownAction", "java:module/UnknownAction");
 		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");
-		actionHandlers.put("/action/Theatres/QueryTheatre", "java:module/QueryTheatreAction");
+		actionHandlers.put("action/QueryTheatre", "java:module/QueryTheatreAction");
 		//actionHandlers.put("", value)
 		appProperties = new Properties();
 		try {
 			context = new InitialContext();
-			//Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
+			Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
+			wb = (IWideBox) registry.lookup("WideBoxServer");
 			//wb = (IWideBox) registry.lookup("WideBoxServer");
 		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
 		//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );

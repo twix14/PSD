@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -21,12 +22,12 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	
 	List<Pair<Session, Integer>> clientIds;
 	ReentrantLock lock = new ReentrantLock();
-	char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+	char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toUpperCase().toCharArray();
 
-	WideBoxDB wideboxDBStub;
+	IWideBoxDB wideboxDBStub;
 	
-	public WideBoxImpl(WideBoxDB wideboxDBStub) throws RemoteException {
-		this.wideboxDBStub = wideboxDBStub;
+	public WideBoxImpl(IWideBoxDB db) throws RemoteException {
+		this.wideboxDBStub = db;
 		
 	}
 
@@ -34,6 +35,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public Message search() throws RemoteException {
 		Message m = new Message(Message.THEATRES);
 		m.setTheatres(wideboxDBStub.listTheatres());
+		
 		return m;
 	}
 	
