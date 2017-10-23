@@ -176,7 +176,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				for (int j = 0; j < NRCL; j++) {
 					char linha = getCharLine(i);
 					coluna = j+1;
-					map.put("T"+k+"-"+linha+coluna, Status.FREE);
+					map.put(k+"-"+linha+coluna, Status.FREE);
 				}
 		}
 	}

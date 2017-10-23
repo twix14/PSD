@@ -36,7 +36,7 @@ public class SeatReplyAction extends Action{
 					switch(model.getResult()) {
 					
 						case "YES":
-							mens = widebox.acceptSeat(Integer.parseInt(model.getClientId()));
+							mens = widebox.acceptSeat(model.getSession());
 							if (mens.getStatus().equals(Message.ACCEPT_OK)) {
 								model.addMessage("Your purchase is completed.");
 							}
@@ -83,8 +83,7 @@ public class SeatReplyAction extends Action{
 			
 			private boolean validInput(QueryTheatresModel model) {
 				
-				return isFilled(model, model.getClientId(), "") && 
-						isFilled(model, model.getResult(), "Your choice must be filled.");
+				return isFilled(model, model.getResult(), "Your choice must be filled.");
 				
 			}
 
@@ -95,7 +94,7 @@ public class SeatReplyAction extends Action{
 
 				// fill it with data from the request
 				model.setResult(request.getParameter("result"));
-				model.setClientId(request.getParameter("clientId"));
+				model.setSession(session);(request.getParameter("clientId"));
 				
 				return model;
 			}

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import db.Status;
+import server.Session;
 import server.Theatre;
 
 //import facade.dto.DiscountDTO;
@@ -21,9 +22,7 @@ import server.Theatre;
 public class QueryTheatresModel extends Model {
 
 	private String movie;
-	private String clientId;
-	private String theatreId;
-	private String reservedSeat;
+	private Session session;
 	private String result;
 	private boolean hasTheatres;
 	private List<String> theatres;
@@ -37,29 +36,12 @@ public class QueryTheatresModel extends Model {
 		return movie;
 	}
 	
-	public String getClientId() {
-		return clientId;
-	}
-	
-	public void setClientId(String clientId) {
-		this.clientId = clientId;
-	}
-	
-
-	public String getTheatreId() {
-		return theatreId;
+	public Session getSession() {
+		return session;
 	}
 
-	public void setTheatreId(String theatreId) {
-		this.theatreId = theatreId;
-	}
-
-	public String getReservedSeat() {
-		return reservedSeat;
-	}
-
-	public void setReservedSeat(String reservedSeat) {
-		this.reservedSeat = reservedSeat;
+	public void setSession(Session session) {
+		this.session = session;
 	}
 
 	public String getResult() {
@@ -95,7 +77,7 @@ public class QueryTheatresModel extends Model {
 	}
 
 	public void clearFields() {
-		movie = clientId = theatreId = reservedSeat = result = "";
+		movie = result = "";
 		hasTheatres = false;
 	}
 	
