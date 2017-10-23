@@ -55,6 +55,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			 * ALMOST IMPOSSIBLE TO HAVE THE SAME ID
 			 */
 			UUID id = UUID.randomUUID();
+			int
 			
 			return assignSeat(theater, available, id);
 		
@@ -84,17 +85,29 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			return assignSeatAux(theater, available, id);
 	}
 	
+	//TODO fazer o caso de dar erro
 	public Message assignSeatAux(String theater, List<String> available, UUID id) throws RemoteException {
 		//choose free seat at random
 		Random rand = new Random();
+		boolean result = false;
+		Message response = null;
+		
 		String seat = available.get(rand.nextInt(available.size()));
-		String resp = wideboxDBStub.put(theater + "-" + 
-				seat, Status.RESERVED);
-		Message response = new Message(resp);
-		Session sess = new Session(id);
-		sess.addSeat(seat);
-		response.setSession(sess);
-		new TimeoutThread(theater + "-" + seat);
+		result = wideboxDBStub.put(theater + "-" + 
+				seat, Status.OCCUPIED, Status.FREE);
+		if (result) {
+			response = new Message(Message.AVAILABLE);
+			Session sess = new Session(id);
+			sess.setSeat(seat);
+			sess.setTheatre(theater);
+			response.setSession(sess);
+			new TimeoutThread(theater + "-" + seat);
+		}
+		else {
+			response = new Message(Message.AVAILABLE);
+		}
+		
+		
 		return response;
 	}
 	
@@ -114,11 +127,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			//timeout of 30 seconds
 			try {
 				Thread.sleep(TIMEOUT);
-				Status state = wideboxDBStub.get(seat);
-				if(state.equals(Status.RESERVED)) {
-					//change seat to free
-					wideboxDBStub.delete(seat);
-				}
+				wideboxDBStub.put(seat, Status.FREE, Status.OCCUPIED);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (RemoteException e) {

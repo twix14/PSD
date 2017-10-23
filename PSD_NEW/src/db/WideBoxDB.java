@@ -15,6 +15,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -51,63 +52,30 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		// TODO Auto-generated constructor stub
 	}
 
-	public String put(String key, Status value) throws RemoteException {
-
-		if(map.get(key).equals(Status.OCCUPIED)) {
-			return PUT_OCC;
-		} else if (map.get(key).equals(Status.RESERVED) && value.equals(Status.RESERVED)) {
-			return PUT_RES;
-		} else if (map.get(key).equals(Status.RESERVED) && value.equals(Status.OCCUPIED)) {
-			map.remove(key);
-			map.put(key, value);
-			try {
-				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
-				bw.write("put " + key + " " + value.toString());
-				bw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			return PUT_OK;
-			//TODO TENHO DUVIDAS NESTE PQ NAO SEI SE É POSSIVEL
-		} else if(map.get(key).equals(Status.RESERVED) && value.equals(Status.FREE)) {
-			map.remove(key);
-			map.put(key, value);
-			try {
-				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
-				bw.write("put " + key + " " + value.toString());
-				bw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return PUT_OK;
-		} else if(map.get(key).equals(Status.FREE) && value.equals(Status.RESERVED)) {
-			map.remove(key);
-			map.put(key, value);
-			try {
-				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
-				bw.write("put " + key + " " + value.toString());
-				bw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return PUT_OK;
-		} else if(map.get(key).equals(Status.FREE) && value.equals(Status.FREE)) {
-			return PUT_OK;
-		} else {
-			//When the seat is free, and you are changing it to occupied
-			map.remove(key);
-			map.put(key, value);
-			try {
-				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
-				bw.write("put " + key + " " + value.toString());
-				bw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return PUT_OK;
+	public boolean put(String key, Status value, Status oldValue) throws RemoteException {
+		BufferedWriter bw = null;
+		PrintWriter out = null;
+		boolean result = false;
+		try {
+			bw = new BufferedWriter (new FileWriter (log, true));
+			out = new PrintWriter(bw);
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			result =  false;
 		}
+		
+		if (map.replace(key, value, oldValue)) {
+			out.println("put(" + key + "," + value + ")" );
+			result =  true;
+		}
+		out.close();
+		return result;
+			
 	}
+
+		
 
 	//TODO NAO SEI SE VAI BUSCAR AO FICHEIRO OU NAO
 	public Status get(String key) throws RemoteException {
@@ -192,7 +160,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			for (int j = 0; j < NRCL; j++) {
 				char linha = getCharLine(i);
 				coluna = j+1;
-				listSeats[i][j] = map.get(theatre+"-"+linha+coluna);
+				listSeats[i][j] = map.get(linha+Integer.toString(coluna));
 			}
 
 		return listSeats;

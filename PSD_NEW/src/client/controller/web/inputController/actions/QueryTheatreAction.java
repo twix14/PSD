@@ -35,7 +35,7 @@ public class QueryTheatreAction extends Action {
 					model.setHasTheatres(true);
 					
 					//Tem de vir o client id
-					model.setClientId(Integer.toString(mens.getClientId()));
+					model.setClientId(Integer.toString(mens.getSession().getId()));
 				}
 				else {
 					model.addMessage("No available Theatres.");

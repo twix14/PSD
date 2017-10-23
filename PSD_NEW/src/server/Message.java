@@ -19,8 +19,6 @@ public class Message implements Serializable {
 	public static final String BUSY = "busy";
 	
 	private String status;
-	private String reservedSeat;
-	private int clientId;
 	private List<String> theatres;
 	private Status[][] seats;
 	private Session sess;
@@ -43,22 +41,6 @@ public class Message implements Serializable {
 
 	public void setStatus(String status) {
 		this.status = status;
-	}
-
-	public String getReservedSeat() {
-		return reservedSeat;
-	}
-
-	public void setReservedSeat(String reservedSeat) {
-		this.reservedSeat = reservedSeat;
-	}
-
-	public int getClientId() {
-		return clientId;
-	}
-
-	public void setClientId(int clientId) {
-		this.clientId = clientId;
 	}
 
 	public List<String> getTheatres() {

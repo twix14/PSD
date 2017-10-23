@@ -29,7 +29,7 @@ public class ChooseSeatAction extends Action {
 					mens = widebox.seatsAvailable(model.getTheatreId());
 					if (mens.getStatus().equals(Message.AVAILABLE)) {
 						model.setSeats(mens.getSeats());
-						model.setReservedSeat(mens.getReservedSeat());
+						model.setReservedSeat(mens.getSession().getSeat());
 					}
 					else {
 						model.addMessage("No available seats, session full.");

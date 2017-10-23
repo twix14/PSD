@@ -8,7 +8,7 @@ import java.util.List;
 public interface IWideBoxDB extends Remote {
 	
 
-	public String put(String key, Status Value) throws RemoteException;
+	public boolean put(String key, Status value, Status oldValue) throws RemoteException;
 
 	public Status get(String key) throws RemoteException;
 
