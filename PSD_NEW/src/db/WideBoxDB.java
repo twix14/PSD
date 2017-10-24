@@ -3,6 +3,7 @@ package db;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.IntStream;
 
 import server.WideBoxImpl;
 import server.WideBoxServer;
@@ -22,6 +23,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 
 public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
@@ -78,30 +80,13 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		
 
 	//TODO NAO SEI SE VAI BUSCAR AO FICHEIRO OU NAO
-	public Status get(String key) throws RemoteException {
-		/*  //read from file 
-	    try{
-	        File toRead=new File("Seats.txt");
-	        FileInputStream fis=new FileInputStream(toRead);
-	        ObjectInputStream ois=new ObjectInputStream(fis);
-
-	        Map<String,State> mapInFile=(HashMap<String,State>)ois.readObject();
-
-	        ois.close();
-	        fis.close();
-
-	        //print All data in MAP
-	        //for(Map.Entry<String,String> m :mapInFile.entrySet()){
-	           // System.out.println(m.getKey()+" : "+m.getValue());
-	        }
-	        return mapInFile;
-	    }catch(Exception e){}
-	    return null;*/
-
-		if(map.containsKey(key)) {
-			return map.get(key);
-		} else
-			return null;
+	public String get(String theatre) throws RemoteException {
+		return map.search(1, (key, value) -> {
+		    if (key.split("-")[0].equals(theatre) && value.equals(Status.FREE)) {
+		        return key;
+		    }
+		    return null;
+		});
 	}
 
 	public String delete(String key) throws RemoteException {
@@ -121,7 +106,23 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public List<String> listTheatres() {
-		List<String> teatros = new ArrayList<String>();
+		List<String> result = new ArrayList<String>();
+		for (int j = 1; j < result.size(); j++) {
+			String curr = Integer.toString(j);
+			String res = map.search(1, (key, value) -> {
+			    if (key.split("-")[0].equals(curr) && value.equals(Status.FREE)) {
+			        return curr;
+			    }
+			   return null;
+			});
+			if (res != null)
+				result.add(curr);
+		}
+			return result;
+		}
+	
+			
+		/*List<String> teatros = new ArrayList<String>();
 		int coluna = 0;
 		Status curr = null;
 		for(int k = 1; k <= NRTH; k++) {
@@ -137,7 +138,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 					}
 				}
 		}
-		return teatros;
+		return teatros;*/
 		/*try {
 		BufferedReader br = new BufferedReader(new FileReader("Teatros.txt"));
 		String l = br.readLine();
@@ -151,7 +152,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			
 		}
 		return teatros;*/
-	}
+	//}
 
 	public Status[][] listSeats(String theatre) throws RemoteException {
 		Status [][] listSeats = new Status[NRRW][NRCL];
@@ -160,7 +161,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			for (int j = 0; j < NRCL; j++) {
 				char linha = getCharLine(i);
 				coluna = j+1;
-				listSeats[i][j] = map.get(linha+Integer.toString(coluna));
+				listSeats[i][j] = map.get(theatre + "-" + linha + Integer.toString(coluna));
 			}
 
 		return listSeats;
