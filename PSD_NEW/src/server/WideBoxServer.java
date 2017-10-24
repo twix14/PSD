@@ -12,6 +12,8 @@ public class WideBoxServer {
 
 	private static final int WIDEBOXCLIENT_PORT = 5000;
 	private static final int WIDEBOXDB_PORT = 5001;
+	
+	private static final String WIDEBOXDB_IP = "";
 
 	public static void main(String[] args) throws Exception {
 
@@ -24,10 +26,9 @@ public class WideBoxServer {
 
 		IWideBoxDB wideboxDBStub = null;
 		IWideBox widebox = null;
-		String ipDB = "127.0.0.1";
 
 		try {
-			Registry registry = LocateRegistry.getRegistry("192.168.43.35", WIDEBOXDB_PORT);
+			Registry registry = LocateRegistry.getRegistry(WIDEBOXDB_IP, WIDEBOXDB_PORT);
 			wideboxDBStub = (IWideBoxDB) registry.lookup("WideBoxDBServer");
 			//widebox = new WideBoxImpl();
 		} catch (RemoteException e) {

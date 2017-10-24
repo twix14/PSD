@@ -22,11 +22,14 @@ import server.Theatre;
 public class QueryTheatresModel extends Model {
 
 	private String movie;
-	private Session session;
+	private String clientId;
+	private String theatreId;
+	private String seat;
 	private String result;
 	private boolean hasTheatres;
 	private List<String> theatres;
-	private Status[][] seats; 
+	private Status[][] seats;
+	
 	
 	public void setMovie(String movie) {
 		this.movie = movie;	
@@ -36,14 +39,6 @@ public class QueryTheatresModel extends Model {
 		return movie;
 	}
 	
-	public Session getSession() {
-		return session;
-	}
-
-	public void setSession(Session session) {
-		this.session = session;
-	}
-
 	public String getResult() {
 		return result;
 	}
@@ -79,6 +74,30 @@ public class QueryTheatresModel extends Model {
 	public void clearFields() {
 		movie = result = "";
 		hasTheatres = false;
+	}
+
+	public String getClientId() {
+		return clientId;
+	}
+
+	public void setClientId(String clientId) {
+		this.clientId = clientId;
+	}
+
+	public String getSeat() {
+		return seat;
+	}
+
+	public void setSeat(String seat) {
+		this.seat = seat;
+	}
+
+	public String getTheatreId() {
+		return theatreId;
+	}
+
+	public void setTheatreId(String theatreId) {
+		this.theatreId = theatreId;
 	}
 	
 }

@@ -12,6 +12,7 @@ import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
 import server.IWideBox;
 import server.Message;
+import server.Session;
 
 public class SeatReplyAction extends Action{
 
@@ -30,13 +31,17 @@ public class SeatReplyAction extends Action{
 				QueryTheatresModel model = createHelper(request);
 				request.setAttribute("model", model);
 				Message mens;
+				Session sess = null;
 				
 				if (validInput(model)) {
 					try {
+						sess = new Session(Integer.parseInt(model.getClientId()));
+						sess.setSeat(model.getSeat());
 					switch(model.getResult()) {
 					
 						case "YES":
-							mens = widebox.acceptSeat(model.getSession());
+							
+							mens = widebox.acceptSeat(sess);
 							if (mens.getStatus().equals(Message.ACCEPT_OK)) {
 								model.addMessage("Your purchase is completed.");
 							}
@@ -47,7 +52,7 @@ public class SeatReplyAction extends Action{
 							break;
 							
 						case "CAN":
-							mens = widebox.cancelSeat(model.getClientId());
+							mens = widebox.cancelSeat(sess);
 							if (mens.getStatus().equals(Message.CANCEL_OK)) {
 								model.addMessage("Your reservation is canceled.");
 							}
@@ -60,10 +65,10 @@ public class SeatReplyAction extends Action{
 						default:
 							if (model.getResult().matches(REGEX)) {
 								
-								mens = widebox.reserveNewSeat(Integer.parseInt(model.getClientId()), model.getResult());
+								mens = widebox.reserveNewSeat(sess);
 								if (mens.getStatus().equals(Message.AVAILABLE)) {
 									model.setSeats(mens.getSeats());
-									model.setReservedSeat(mens.getReservedSeat());
+									model.setSeat(mens.getSession().getSeat());
 								}
 								else 
 									model.addMessage("No available seats, session full.");
@@ -94,8 +99,8 @@ public class SeatReplyAction extends Action{
 
 				// fill it with data from the request
 				model.setResult(request.getParameter("result"));
-				model.setSession(session);(request.getParameter("clientId"));
-				
+				model.setClientId(request.getParameter("clientId"));
+				model.setSeat(request.getParameter("seat"));
 				return model;
 			}
 }

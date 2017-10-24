@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import client.controller.web.inputController.actions.Action;
 import client.controller.web.inputController.actions.ChooseSeatAction;
 import client.controller.web.inputController.actions.QueryTheatreAction;
+import client.controller.web.inputController.actions.SeatReplyAction;
 import client.controller.web.inputController.actions.UnknownAction;
 import server.IWideBox;
 
@@ -93,11 +94,11 @@ public class FrontController extends HttpServlet {
 			actionCommand = new QueryTheatreAction();
 			break;
 			
-		case "/Theatres/SeatReply":
-			
+		case "/seatReply":
+			actionCommand = new SeatReplyAction();
 			break;
 			
-		case "/ChooseSeat":
+		case "/chooseSeat":
 			actionCommand = new ChooseSeatAction();
 			break;
 			

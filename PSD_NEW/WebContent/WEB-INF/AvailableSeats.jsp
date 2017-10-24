@@ -26,7 +26,7 @@
 
 
 <h2>Choose a Seat</h2>
-<form action="seatreply" method="post">
+<form action="action/seatReply" method="post">
    <c:if test="${empty model.seats}">
 	<p>Seats</p>
 	<table id= "maintables">
@@ -53,7 +53,7 @@
 	</table>
    </c:if>
    <div class="mandatory_field">
-   		<label for="reservedSeat">Your reserved seat: "$model.reservedSeat"</label> 
+   		<label for="reservedSeat">Your reserved seat: "$model.seat"</label> 
    		
     </div>
    <div class="mandatory_field">
@@ -63,6 +63,7 @@ for choosing another seat:</label>
     </div>
     
    <input type="hidden" name="clientId" value="${model.clientId}"/>
+   <input type="hidden" name="seat" value="${model.seat}"/>
    <div class="button" align="right">
    		<input type="submit" value="Choose seat">
    </div>

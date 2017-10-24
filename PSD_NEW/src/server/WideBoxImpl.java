@@ -10,19 +10,19 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import db.*;
-
-import db.WideBoxDB;
 
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private static final long serialVersionUID = 240458129728788662L;
 	private static final int TIMEOUT = 15000;
+	private static final int NRAND = 15000;
 	
-	List<Pair<Session, Integer>> clientIds;
-	private List<Session> sessions;
+	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
+	private  ConcurrentHashMap<Integer, Boolean> clientsId;
 	
 	ReentrantLock lock = new ReentrantLock();
 	ReentrantLock lockReserved = new ReentrantLock();
@@ -33,7 +33,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	
 	public WideBoxImpl(IWideBoxDB db) throws RemoteException {
 		this.wideboxDBStub = db;
-		this.sessions = new ArrayList<Session>();
+		//ver params iniciais
+		this.sessions = new ConcurrentHashMap<Integer,TimeoutThread>();
+		this.clientsId = new ConcurrentHashMap<Integer, Boolean>(NRAND);
 	}
 
 	@Override
@@ -50,17 +52,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		List<String> available;
 		
 		if(!(available = getEmptySeats(seats)).isEmpty()) {
-		
-			//chave CINEMA-XYY value
-			//X de A-Z e YY de 1-40
-			
-			//client id
-			/**
-			 * A VER A UTILIDADE DO ID
-			 * ALMOST IMPOSSIBLE TO HAVE THE SAME ID
-			 */
-			UUID id = UUID.randomUUID();
-			
+			int id = getNextClientId();
 			return assignSeat(theater, available, id);
 		
 		} else {
@@ -74,7 +66,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * @param theater
 	 * @throws RemoteException 
 	 */
-	private Message assignSeat(String theater, List<String> available, UUID id) throws RemoteException {
+	private Message assignSeat(String theater, List<String> available, int id) throws RemoteException {
 		if(available.size() < 10) {
 		
 			lock.lock();
@@ -90,7 +82,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 	
 	//TODO fazer o caso de dar erro
-	public Message assignSeatAux(String theater, List<String> available, UUID id) throws RemoteException {
+	public Message assignSeatAux(String theater, List<String> available, int id) throws RemoteException {
 		//choose free seat at random
 		Random rand = new Random();
 		boolean result = false;
@@ -106,20 +98,11 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			sess.setSeat(seat);
 			sess.setTheatre(theater);
 			response.setSession(sess);
+			
+			TimeoutThread tt = new TimeoutThread(theater+ "-" + seat, id);
 			lockReserved.lock();
-			int pos;
 			try {
-				sessions.add(sess);
-				pos = sessions.size()-1;
-			} finally {
-				lockReserved.unlock();
-			}
-			TimeoutThread tt = new TimeoutThread(sess);
-			lockReserved.lock();
-			try{
-				Session s = sessions.get(pos);
-				s.setThreadId(tt.getId());
-				sessions.set(pos, s);
+				sessions.put(id, tt);
 			} finally {
 				lockReserved.unlock();
 			}
@@ -139,10 +122,12 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 */
 	public class TimeoutThread extends Thread {
 
-		private Session ses;
+		private String tSeat;
+		private int clientId;
 		
-		public TimeoutThread(Session ses) {
-			this.ses = ses;
+		public TimeoutThread(String tSeat,int clientId) {
+			this.tSeat = tSeat;
+			this.clientId = clientId;
 		}
 		
 		public void run() {
@@ -152,9 +137,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				Thread.sleep(TIMEOUT);
 				
 				//Libertar lugar
-				wideboxDBStub.put(ses.getTheatre() + "-" + ses.getSeat(), Status.FREE, Status.OCCUPIED);
+				wideboxDBStub.put(tSeat, Status.FREE, Status.OCCUPIED);
 				lockReserved.lock();
-				sessions.remove(ses);
+				sessions.remove(clientId);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (RemoteException e) {
@@ -187,21 +172,34 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 
 	@Override
-	public Message acceptSeat(Session sesId) throws RemoteException {
-		sesId.getThreadId()
-		return null;
+	public Message acceptSeat(Session ses) throws RemoteException {
+		TimeoutThread t = sessions.get(ses.getId());
+		Message m = null;
+		if (!t.isInterrupted()) {
+			t.interrupt();
+			sessions.remove(ses.getId());
+			m = new Message(Message.ACCEPT_OK);
+		}
+		else
+			m = new Message(Message.ACCEPT_ERROR);
+		return m;
 	}
 
 	@Override
-	public Message reserveNewSeat(int clientId, String seat) throws RemoteException {
+	public Message reserveNewSeat(Session ses) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public Message cancelSeat(String seat) throws RemoteException {
+	public Message cancelSeat(Session ses) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	private int getNextClientId() {
+		return 1;
+		
 	}
 
 }

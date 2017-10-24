@@ -29,7 +29,7 @@ public class ChooseSeatAction extends Action {
 					mens = widebox.seatsAvailable(model.getTheatreId());
 					if (mens.getStatus().equals(Message.AVAILABLE)) {
 						model.setSeats(mens.getSeats());
-						model.setReservedSeat(mens.getSession().getSeat());
+						model.setSeat(mens.getSession().getSeat());
 					}
 					else {
 						model.addMessage("No available seats, session full.");
@@ -40,7 +40,7 @@ public class ChooseSeatAction extends Action {
 			} else
 				model.addMessage("Error validating the theatre pick");
 			
-			request.getRequestDispatcher("AvailableSeats.jsp").forward(request, response);
+			request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
 		}
 
 		
