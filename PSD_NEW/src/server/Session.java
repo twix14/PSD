@@ -1,9 +1,10 @@
 package server;
 
-import java.util.UUID;
+import java.io.Serializable;
 
-public class Session {
-	
+public class Session implements Serializable {
+
+	private static final long serialVersionUID = -4834965041546308787L;
 	private int id;
 	private String seat;
 	private String theatre;

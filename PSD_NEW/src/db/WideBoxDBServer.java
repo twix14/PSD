@@ -5,7 +5,7 @@ import java.rmi.registry.Registry;
 
 public class WideBoxDBServer {
 	
-	private static final String MY_IP = "";
+	private static final String MY_IP = "127.0.0.1";
 	
 	public static void main(String[] args) throws Exception {
 

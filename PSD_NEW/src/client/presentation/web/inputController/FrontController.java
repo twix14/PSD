@@ -69,7 +69,7 @@ public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final String SERVER_PORT = "5000";
-	private static final String SERVER_IP = "192.168.43.35";
+	private static final String SERVER_IP = "127.0.0.1";
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
@@ -94,11 +94,11 @@ public class FrontController extends HttpServlet {
 			actionCommand = new QueryTheatreAction();
 			break;
 			
-		case "action/seatReply":
+		case "/seatReply":
 			actionCommand = new SeatReplyAction();
 			break;
 			
-		case "action/chooseSeat":
+		case "/chooseSeat":
 			actionCommand = new ChooseSeatAction();
 			break;
 			

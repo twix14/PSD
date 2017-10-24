@@ -30,7 +30,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	ReentrantLock lock = new ReentrantLock();
 	ReentrantLock lockReserved = new ReentrantLock();
 	
-	char[] alphabet = "abcdefghijklmnopqrstuvwxyz".toUpperCase().toCharArray();
+	String alf = "abcdefghijklmnopqrstuvwxyz";
+	
+	char[] alphabet = alf.toUpperCase().toCharArray();
 
 	IWideBoxDB wideboxDBStub;
 	
@@ -71,7 +73,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * @throws RemoteException 
 	 */
 	private Message assignSeat(String theater, List<String> available, int id, Status[][] seats) throws RemoteException {
-		if(available.size() < 10) {
+		//if(available.size() < 10) {
 		
 			lock.lock();
 			try {
@@ -81,8 +83,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				lock.unlock();
 			}
 		
-		} else 
-			return assignSeatAux(theater, available, id, seats);
+		//} else 
+			//return assignSeatAux(theater, available, id, seats);
 	}
 	
 	//TODO fazer o caso de dar erro
@@ -98,6 +100,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		if (result) {
 			response = new Message(Message.AVAILABLE);
+			seats[getCharacterIndex(seat.substring(0, 1))]
+					[Integer.parseInt(seat.substring(1))] = Status.RESERVED;
 			response.setSeats(seats);
 			Session sess = new Session(id);
 			sess.setSeat(seat);
@@ -119,6 +123,14 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		
 		return response;
+	}
+	
+	private int getCharacterIndex(String c) {
+		for(int i = 0; i < alphabet.length; i++) {
+			if(c.equals(Character.toString(alphabet[i])))
+				return i;				
+		}
+		return -1;
 	}
 	
 	/**
@@ -168,9 +180,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		List<String> empty = new LinkedList<>();
 		
 		for(int i = 0; i < seats.length; i++)
-			for(int j = 0; i < seats[i].length; j++) {
+			for(int j = 0; j < seats[i].length; j++) {
 				if(seats[i][j].equals(Status.FREE))
-					empty.add(new String(String.valueOf(alphabet[i]) + j));
+					empty.add(new String(String.valueOf(alphabet[i])+ j));
 			}
 		
 		return empty;

@@ -35,13 +35,14 @@ public class QueryTheatreAction extends Action {
 					model.setHasTheatres(true);
 					
 					//Tem de vir o client id
-					model.setClientId(Integer.toString(mens.getSession().getId()));
+					//model.setClientId(Integer.toString(mens.getSession().getId()));
 				}
 				else {
 					model.addMessage("No available Theatres.");
 					model.setHasTheatres(false);
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				model.addMessage("Error trying to get the search result: " + e.getMessage());
 			}
 		

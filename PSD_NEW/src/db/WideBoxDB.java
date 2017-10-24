@@ -55,10 +55,10 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public boolean put(String key, Status value, Status oldValue) throws RemoteException {
-		BufferedWriter bw = null;
-		PrintWriter out = null;
+		//BufferedWriter bw = null;
+		//PrintWriter out = null;
 		boolean result = false;
-		try {
+		/*try {
 			bw = new BufferedWriter (new FileWriter (log, true));
 			out = new PrintWriter(bw);
 			
@@ -66,13 +66,13 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			result =  false;
-		}
+		}*/
 		
-		if (map.replace(key, value, oldValue)) {
-			out.println("put(" + key + "," + value + ")" );
+		if (map.replace(key, oldValue, value)) {
+			//out.println("put(" + key + "," + value + ")" );
 			result =  true;
 		}
-		out.close();
+		//out.close();
 		return result;
 			
 	}
@@ -81,12 +81,14 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	//TODO NAO SEI SE VAI BUSCAR AO FICHEIRO OU NAO
 	public String get(String theatre) throws RemoteException {
-		return map.search(1, (key, value) -> {
+		String result = null;
+		result =  map.search(1, (key, value) -> {
 		    if (key.split("-")[0].equals(theatre) && value.equals(Status.FREE)) {
 		        return key;
 		    }
-		    return null;
+		    return "FULL";
 		});
+		return result;
 	}
 
 	public String delete(String key) throws RemoteException {
@@ -107,7 +109,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	public List<String> listTheatres() {
 		List<String> result = new ArrayList<String>();
-		for (int j = 1; j < result.size(); j++) {
+		for (int j = 1; j < NRTH; j++) {
 			String curr = Integer.toString(j);
 			String res = map.search(1, (key, value) -> {
 			    if (key.split("-")[0].equals(curr) && value.equals(Status.FREE)) {

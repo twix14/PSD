@@ -34,8 +34,10 @@ public class ChooseSeatAction extends Action {
 					}
 					else {
 						model.addMessage("No available seats, session full.");
+						request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);
 					}
 				} catch (Exception e) {
+					e.printStackTrace();
 					model.addMessage("Error trying to the available seats: " + e.getMessage());
 				}
 			} else
