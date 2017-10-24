@@ -25,7 +25,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
 	private  ConcurrentHashMap<Integer, Boolean> clientsId;
 	
-	//private AtomicInteger 
+	//private AtomicInteger serialClient;
 	
 	ReentrantLock lock = new ReentrantLock();
 	ReentrantLock lockReserved = new ReentrantLock();
@@ -39,6 +39,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		//ver params iniciais
 		this.sessions = new ConcurrentHashMap<Integer,TimeoutThread>();
 		this.clientsId = new ConcurrentHashMap<Integer, Boolean>(NRAND);
+		//this.serialClient = new AtomicInteger();
 	}
 
 	@Override
@@ -56,7 +57,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		if(!(available = getEmptySeats(seats)).isEmpty()) {
 			int id = getNextClientId();
-			return assignSeat(theater, available, id);
+			return assignSeat(theater, available, id, seats);
 		
 		} else {
 			return new Message(Message.FULL);
@@ -69,23 +70,23 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * @param theater
 	 * @throws RemoteException 
 	 */
-	private Message assignSeat(String theater, List<String> available, int id) throws RemoteException {
+	private Message assignSeat(String theater, List<String> available, int id, Status[][] seats) throws RemoteException {
 		if(available.size() < 10) {
 		
 			lock.lock();
 			try {
-				return assignSeatAux(theater, available, id);
+				return assignSeatAux(theater, available, id, seats);
 				
 			} finally {
 				lock.unlock();
 			}
 		
 		} else 
-			return assignSeatAux(theater, available, id);
+			return assignSeatAux(theater, available, id, seats);
 	}
 	
 	//TODO fazer o caso de dar erro
-	public Message assignSeatAux(String theater, List<String> available, int id) throws RemoteException {
+	public Message assignSeatAux(String theater, List<String> available, int id, Status[][] seats) throws RemoteException {
 		//choose free seat at random
 		Random rand = new Random();
 		boolean result = false;
@@ -97,6 +98,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		if (result) {
 			response = new Message(Message.AVAILABLE);
+			response.setSeats(seats);
 			Session sess = new Session(id);
 			sess.setSeat(seat);
 			sess.setTheatre(theater);
@@ -112,7 +114,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			
 		}
 		else {
-			response = new Message(Message.AVAILABLE);
+			response = new Message(Message.ACCEPT_ERROR);
 		}
 		
 		

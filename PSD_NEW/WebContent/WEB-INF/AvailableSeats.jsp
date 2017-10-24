@@ -53,7 +53,7 @@
 	</table>
    </c:if>
    <div class="mandatory_field">
-   		<label for="reservedSeat">Your reserved seat: "$model.seat"</label> 
+   		<label for="reservedSeat">Your reserved seat: ${model.seat}"</label> 
    		
     </div>
    <div class="mandatory_field">

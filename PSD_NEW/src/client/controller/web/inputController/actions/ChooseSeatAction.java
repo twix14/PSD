@@ -30,6 +30,7 @@ public class ChooseSeatAction extends Action {
 					if (mens.getStatus().equals(Message.AVAILABLE)) {
 						model.setSeats(mens.getSeats());
 						model.setSeat(mens.getSession().getSeat());
+						model.setClientId(String.valueOf(mens.getSession().getId()));
 					}
 					else {
 						model.addMessage("No available seats, session full.");
