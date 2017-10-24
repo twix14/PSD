@@ -94,11 +94,11 @@ public class FrontController extends HttpServlet {
 			actionCommand = new QueryTheatreAction();
 			break;
 			
-		case "/seatReply":
+		case "action/seatReply":
 			actionCommand = new SeatReplyAction();
 			break;
 			
-		case "/chooseSeat":
+		case "action/chooseSeat":
 			actionCommand = new ChooseSeatAction();
 			break;
 			

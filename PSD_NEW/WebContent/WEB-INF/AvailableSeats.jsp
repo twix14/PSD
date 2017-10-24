@@ -26,7 +26,7 @@
 
 
 <h2>Choose a Seat</h2>
-<form action="/seatReply" method="post">
+<form action="action/seatReply" method="post">
    <c:if test="${empty model.seats}">
 	<p>Seats</p>
 	<table id= "maintables">
