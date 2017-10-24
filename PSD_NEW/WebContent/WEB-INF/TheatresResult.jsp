@@ -21,7 +21,7 @@ function proc(theatre){
 </head>
 <body>
 <h2>Theatres Result</h2>
-<form id="myForm" action="action/chooseSeat" method="post">
+<form id="myForm" action="/chooseSeat" method="post">
    <c:if test="${model.hasTheatres}">
 	<p>Theatres</p>
 	<ul style="list-style-type:disc">

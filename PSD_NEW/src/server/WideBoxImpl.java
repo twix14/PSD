@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import db.*;
@@ -23,6 +24,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	
 	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
 	private  ConcurrentHashMap<Integer, Boolean> clientsId;
+	
+	//private AtomicInteger 
 	
 	ReentrantLock lock = new ReentrantLock();
 	ReentrantLock lockReserved = new ReentrantLock();
