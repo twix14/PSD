@@ -13,7 +13,10 @@ public class WideBoxServer {
 	private static final int WIDEBOXCLIENT_PORT = 5000;
 	private static final int WIDEBOXDB_PORT = 5001;
 	
+	private static final String MY_IP = "";
+	
 	private static final String WIDEBOXDB_IP = "";
+	
 
 	public static void main(String[] args) throws Exception {
 
@@ -28,9 +31,10 @@ public class WideBoxServer {
 		IWideBox widebox = null;
 
 		try {
+			System.setProperty("java.rmi.server.hostname", MY_IP);
 			Registry registry = LocateRegistry.getRegistry(WIDEBOXDB_IP, WIDEBOXDB_PORT);
 			wideboxDBStub = (IWideBoxDB) registry.lookup("WideBoxDBServer");
-			//widebox = new WideBoxImpl();
+			System.out.println("Connected to DB");
 		} catch (RemoteException e) {
 			
 			System.err.println("Error in getting registry");
@@ -46,9 +50,10 @@ public class WideBoxServer {
 		} catch (RemoteException e) {
 			
 			System.err.println("Error in creating the WideBoxServer registry");
-			 
+			e.printStackTrace(); 
 		} catch (Exception e) {
 			System.err.println("Widebox - Error trying to start the server!");
+			e.printStackTrace();
 		}
 	}
 }
