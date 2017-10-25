@@ -16,9 +16,6 @@ import server.Session;
 
 public class SeatReplyAction extends Action{
 
-	//@EJB private ISportEventServicesRemote addRefToMatchHandler;
-			
-			private static final int WIDEBOX_PORT = 1616;
 			private static final String REGEX = "[A-Z][1-40]";
 
 			IWideBox widebox = FrontController.getWideBoxServer();
@@ -48,7 +45,7 @@ public class SeatReplyAction extends Action{
 							else 
 								model.addMessage("Your reservation has experired(ACCEPT_ERROR).");
 								
-							request.getRequestDispatcher("Result.jsp").forward(request, response);
+							request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);
 							break;
 							
 						case "CAN":
@@ -59,7 +56,7 @@ public class SeatReplyAction extends Action{
 							else 
 								model.addMessage("Your reservation has experied(CANCEL_ERROR).");
 							
-							request.getRequestDispatcher("Result.jsp").forward(request, response);	
+							request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);	
 							break;
 							
 						default:
@@ -69,20 +66,26 @@ public class SeatReplyAction extends Action{
 								if (mens.getStatus().equals(Message.AVAILABLE)) {
 									model.setSeats(mens.getSeats());
 									model.setSeat(mens.getSession().getSeat());
+									model.setClientId(String.valueOf(mens.getSession().getId()));
 								}
 								else 
 									model.addMessage("No available seats, session full.");
+								
+								request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
 							}
 								
 							break;
 						}
 					} catch (Exception e) {
 							model.addMessage("Error trying to the available seats: " + e.getMessage());
+							request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
 						}
-				} else
+				} else {
 					model.addMessage("Please choose one option");
+					request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
+				}
 				
-				request.getRequestDispatcher("AvailableSeats.jsp").forward(request, response);
+				
 			}
 
 			

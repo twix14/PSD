@@ -25,7 +25,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
 	private  ConcurrentHashMap<Integer, Boolean> clientsId;
 	
-	//private AtomicInteger serialClient;
+	private AtomicInteger serialClient;
 	
 	ReentrantLock lock = new ReentrantLock();
 	ReentrantLock lockReserved = new ReentrantLock();
@@ -40,7 +40,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		this.wideboxDBStub = db;
 		//ver params iniciais
 		this.sessions = new ConcurrentHashMap<Integer,TimeoutThread>();
-		this.clientsId = new ConcurrentHashMap<Integer, Boolean>(NRAND);
+		serialClient = new AtomicInteger();
+		//this.clientsId = new ConcurrentHashMap<Integer, Boolean>(NRAND);
 		//this.serialClient = new AtomicInteger();
 	}
 
@@ -101,7 +102,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		if (result) {
 			response = new Message(Message.AVAILABLE);
 			seats[getCharacterIndex(seat.substring(0, 1))]
-					[Integer.parseInt(seat.substring(1))] = Status.RESERVED;
+					[Integer.parseInt(seat.substring(1))-2] = Status.RESERVED;
 			response.setSeats(seats);
 			Session sess = new Session(id);
 			sess.setSeat(seat);
@@ -111,6 +112,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			TimeoutThread tt = new TimeoutThread(theater+ "-" + seat, id);
 			lockReserved.lock();
 			try {
+				tt.start();
 				sessions.put(id, tt);
 			} finally {
 				lockReserved.unlock();
@@ -192,14 +194,15 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public Message acceptSeat(Session ses) throws RemoteException {
 		TimeoutThread t = sessions.get(ses.getId());
 		Message m = null;
-		if (!t.isInterrupted()) {
+		if (t != null && !t.isInterrupted()) {
 			t.interrupt();
-			sessions.remove(ses.getId());
+			//sessions.remove(ses.getId());
 			m = new Message(Message.ACCEPT_OK);
 		}
 		else
 			m = new Message(Message.ACCEPT_ERROR);
 		return m;
+		
 	}
 
 	@Override
@@ -215,7 +218,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 	
 	private int getNextClientId() {
-		return 1;
+		return serialClient.incrementAndGet();
 		
 	}
 

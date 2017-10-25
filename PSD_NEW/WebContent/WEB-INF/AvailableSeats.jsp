@@ -40,7 +40,7 @@
 		  	
 		    	<c:when test="${seat.reserved}">
 		    	
-		    		<td class="red">R</td>
+		    		<td class="green">R</td>
 		    	</c:when>
 		    	<c:when test="${seat.occupied}">
 		    		<td class="blue">O</td>
