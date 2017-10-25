@@ -157,16 +157,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				
 				//Libertar lugar
 				wideboxDBStub.put(tSeat, Status.FREE, Status.OCCUPIED);
-				lockReserved.lock();
 				sessions.remove(clientId);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			} catch (RemoteException e) {
 				System.err.println("Can't connect to the DB");
 				e.printStackTrace();
-			} finally {
-				lockReserved.unlock();
-			}
+			} 
 			
 			return;
 		}
@@ -194,14 +191,27 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public Message acceptSeat(Session ses) throws RemoteException {
 		TimeoutThread t = sessions.get(ses.getId());
 		Message m = null;
+		//try {
 		if (t != null && !t.isInterrupted()) {
 			t.interrupt();
-			//sessions.remove(ses.getId());
+			sessions.remove(ses.getId());
 			m = new Message(Message.ACCEPT_OK);
 		}
 		else
 			m = new Message(Message.ACCEPT_ERROR);
+		/*} catch (InterruptedException e) {
+			
+		}*/
 		return m;
+		/*try {
+		 * t.interrupt();
+		 * 
+		 * }
+		 * catch (Exception e) {
+		 * m = new Message(Message.ACCEPT_OK);
+		 * }
+		 *return m; 
+		 */
 		
 	}
 
