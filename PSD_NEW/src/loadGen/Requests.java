@@ -40,13 +40,13 @@ public class Requests {
 		Session ses = null;
 		int size = 0;
 		int value = 0;
-		//Random rand = new Random();
+		Random rand = new Random();
 		
 		m = wb.search();
 		size = m.getTheatres().size();
 		
-		value = rand.nextInt(size);
-		m2 = wb.seatsAvailable(Integer.toString(value));
+		//value = rand.nextInt(size);
+		m2 = wb.seatsAvailable(Integer.toString(client));
 		ses = m2.getSession();
 		
 		if(m2.getStatus().equals(Message.AVAILABLE)) {
@@ -54,7 +54,7 @@ public class Requests {
 		}
 		
 		else if (m2.getStatus().equals(Message.FULL)) {
-			m2 = wb.
+			purchase(client, );
 		}
 	}
 
