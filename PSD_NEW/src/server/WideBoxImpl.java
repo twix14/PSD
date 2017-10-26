@@ -23,7 +23,6 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private static final int NRAND = 15000;
 	
 	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
-	private  ConcurrentHashMap<Integer, Boolean> clientsId;
 	
 	private AtomicInteger serialClient;
 	
@@ -41,8 +40,6 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		//ver params iniciais
 		this.sessions = new ConcurrentHashMap<Integer,TimeoutThread>();
 		serialClient = new AtomicInteger();
-		//this.clientsId = new ConcurrentHashMap<Integer, Boolean>(NRAND);
-		//this.serialClient = new AtomicInteger();
 	}
 
 	@Override
@@ -216,15 +213,81 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	}
 
 	@Override
-	public Message reserveNewSeat(Session ses) throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+	public Message reserveNewSeat(Session ses, String result) throws RemoteException {
+		TimeoutThread t = sessions.get(ses.getId());
+		Message m = null;
+		boolean res = false;
+		boolean res2 = false;
+		Status[][] seats = null;
+		
+		lock.lock();
+		try {
+			
+			
+			if (t != null && !t.isInterrupted()) {
+				res2 = wideboxDBStub.put(ses.getTheatre() + "-" + 
+						result, Status.OCCUPIED, Status.FREE);
+				
+				m = new Message(Message.AVAILABLE);
+				if (res2) {
+					res = wideboxDBStub.put(ses.getTheatre() + "-" + 
+							ses.getSeat(), Status.FREE, Status.OCCUPIED);
+					sessions.remove(ses.getId(), t);
+					t.interrupt();
+					TimeoutThread tt = new TimeoutThread(ses.getTheatre()+ "-" + result, ses.getId());
+					sessions.put(ses.getId(), tt);
+					seats = wideboxDBStub.listSeats(ses.getTheatre());
+					seats[getCharacterIndex(result.substring(0, 1))]
+							[Integer.parseInt(result.substring(1))-2] = Status.RESERVED;
+					m.setSeats(seats);
+					Session sess = new Session(ses.getId());
+					sess.setSeat(result);
+					sess.setTheatre(ses.getTheatre());
+					m.setSession(sess);					
+				} 
+				else {
+					sessions.remove(ses.getId(), t);
+					t.interrupt();
+					TimeoutThread tt = new TimeoutThread(ses.getTheatre()+ "-" + ses.getSeat(), ses.getId());
+					sessions.put(ses.getId(), tt);
+					seats = wideboxDBStub.listSeats(ses.getTheatre());
+					seats[getCharacterIndex(result.substring(0, 1))]
+							[Integer.parseInt(result.substring(1))-2] = Status.RESERVED;
+					m.setSeats(seats);
+					Session sess = new Session(ses.getId());
+					sess.setSeat(ses.getSeat());
+					sess.setTheatre(ses.getTheatre());
+					m.setSession(sess);
+				}
+				
+			}
+			else {
+				m = new Message(Message.ACCEPT_ERROR);
+			}
+				
+		} finally {
+			lock.unlock();
+		}
+		return m;
 	}
 
 	@Override
 	public Message cancelSeat(Session ses) throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+		TimeoutThread t = sessions.get(ses.getId());
+		Message m = null;
+		//try {
+		if (t != null && !t.isInterrupted()) {
+			t.interrupt();
+			sessions.remove(ses.getId());
+			wideboxDBStub.put(ses.getTheatre() + "-" + ses.getSeat(), Status.FREE, Status.OCCUPIED);
+			m = new Message(Message.CANCEL_OK);
+		}
+		else
+			m = new Message(Message.CANCEL_ERROR);
+		/*} catch (InterruptedException e) {
+			
+		}*/
+		return m;
 	}
 	
 	private int getNextClientId() {

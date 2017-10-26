@@ -42,5 +42,5 @@ public class Session implements Serializable {
 	public void setSeat(String seat) {
 		this.seat = seat;
 	}
-	
+
 }

@@ -62,17 +62,29 @@ public class SeatReplyAction extends Action{
 						default:
 							if (model.getResult().matches(REGEX)) {
 								
-								mens = widebox.reserveNewSeat(sess);
+								mens = widebox.reserveNewSeat(sess, model.getResult());
 								if (mens.getStatus().equals(Message.AVAILABLE)) {
 									model.setSeats(mens.getSeats());
 									model.setSeat(mens.getSession().getSeat());
 									model.setClientId(String.valueOf(mens.getSession().getId()));
+									
+									request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
 								}
-								else 
-									model.addMessage("No available seats, session full.");
+								else { 
+									model.addMessage("Your reservation has experired.");
+									request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);
+								}
 								
+								
+							} 
+							else {
+								mens = widebox.seatsAvailable(model.getTheatreId());
+								//if (mens.getStatus().equals(Message.))
+								model.setSeats(mens.getSeats());
+								//model.setSeat();
 								request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
 							}
+								
 								
 							break;
 						}
@@ -104,6 +116,7 @@ public class SeatReplyAction extends Action{
 				model.setResult(request.getParameter("result"));
 				model.setClientId(request.getParameter("clientId"));
 				model.setSeat(request.getParameter("seat"));
+				model.setTheatreId(request.getParameter("theatre"));
 				return model;
 			}
 }

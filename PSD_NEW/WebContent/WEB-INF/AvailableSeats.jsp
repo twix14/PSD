@@ -25,7 +25,7 @@
 <body>
 
 
-
+<h3>Theatre: ${model.theatre}</h3>
 <h2>Choose a Seat</h2>
 <form action="seatReply" method="post">
    <c:if test="${!empty model.seats}">
@@ -69,6 +69,7 @@ for choosing another seat:</label>
     
    <input type="hidden" name="clientId" value="${model.clientId}"/>
    <input type="hidden" name="seat" value="${model.seat}"/>
+   <input type="hidden" name="theatre" value="${model.theatre}"/>
    <div class="button" align="right">
    		<input type="submit" value="Choose seat">
    </div>
