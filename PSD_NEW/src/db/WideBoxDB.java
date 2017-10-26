@@ -70,6 +70,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		
 		if (map.replace(key, oldValue, value)) {
 			//out.println("put(" + key + "," + value + ")" );
+			System.out.println("Changed seat " + key + " from " + 
+					oldValue + " to " + value);
 			result =  true;
 		}
 		//out.close();
@@ -77,18 +79,18 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			
 	}
 
-		
-
-	//TODO NAO SEI SE VAI BUSCAR AO FICHEIRO OU NAO
-	public String get(String theatre) throws RemoteException {
-		String result = null;
-		result =  map.search(1, (key, value) -> {
-		    if (key.split("-")[0].equals(theatre) && value.equals(Status.FREE)) {
-		        return key;
-		    }
-		    return "FULL";
-		});
-		return result;
+	public void printStatus(String theatre) throws RemoteException {
+		Status [][] listSeats = new Status[NRRW][NRCL];
+		int coluna = 0;
+		for(int i = 0; i < NRRW; i++) {
+			for (int j = 0; j < NRCL; j++) {
+				char linha = getCharLine(i);
+				coluna = j+1;
+				listSeats[i][j] = map.get(theatre + "-" + linha + Integer.toString(coluna));
+				System.out.print(String.valueOf(linha) + j + "-" + listSeats[i][j] + " ");
+			}
+			System.out.print("\n");
+		}
 	}
 
 	public String delete(String key) throws RemoteException {
@@ -268,6 +270,12 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			break;
 		}
 		return character;
+	}
+
+	@Override
+	public String get(String key) throws RemoteException {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 

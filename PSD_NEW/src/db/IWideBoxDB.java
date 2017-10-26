@@ -18,5 +18,5 @@ public interface IWideBoxDB extends Remote {
 	
 	public Status[][] listSeats(String theatre) throws RemoteException;
 	
-	
+	public void printStatus(String theatre) throws RemoteException;
 }

@@ -19,7 +19,7 @@ import db.*;
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private static final long serialVersionUID = 240458129728788662L;
-	private static final int TIMEOUT = 15000;
+	private static final int TIMEOUT = 1500000;
 	private static final int NRAND = 15000;
 	
 	private  ConcurrentHashMap<Integer, TimeoutThread> sessions;
