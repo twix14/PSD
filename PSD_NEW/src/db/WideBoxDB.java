@@ -50,7 +50,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	protected WideBoxDB() throws RemoteException {
 		super();
 		loadDB();
-		log = new File("log.txt");
+		//log = new File("log.txt");
 		// TODO Auto-generated constructor stub
 	}
 
@@ -112,15 +112,17 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	public List<String> listTheatres() {
 		List<String> result = new ArrayList<String>();
 		for (int j = 1; j < NRTH; j++) {
-			String curr = Integer.toString(j);
+			result.add(Integer.toString(j));
+			/*String curr = Integer.toString(j);
 			String res = map.search(1, (key, value) -> {
 			    if (key.split("-")[0].equals(curr) && value.equals(Status.FREE)) {
 			        return curr;
 			    }
 			   return null;
 			});
+			
 			if (res != null)
-				result.add(curr);
+				result.add(curr);*/
 		}
 			return result;
 		}

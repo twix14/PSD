@@ -1,20 +1,16 @@
 package server;
 
-import java.io.IOException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
-import db.*;
+import db.IWideBoxDB;
+import db.Status;
 
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
@@ -27,7 +23,6 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private AtomicInteger serialClient;
 	
 	ReentrantLock lock = new ReentrantLock();
-	ReentrantLock lockReserved = new ReentrantLock();
 	
 	String alf = "abcdefghijklmnopqrstuvwxyz";
 	
@@ -42,6 +37,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		serialClient = new AtomicInteger();
 	}
 
+	//TO-DO ver quando da full
 	@Override
 	public Message search() throws RemoteException {
 		Message m = new Message(Message.THEATRES);
@@ -107,13 +103,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			response.setSession(sess);
 			
 			TimeoutThread tt = new TimeoutThread(theater+ "-" + seat, id);
-			lockReserved.lock();
-			try {
-				tt.start();
-				sessions.put(id, tt);
-			} finally {
-				lockReserved.unlock();
-			}
+			tt.start();
+			sessions.put(id, tt);
 			
 		}
 		else {
