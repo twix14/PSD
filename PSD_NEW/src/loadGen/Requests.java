@@ -3,6 +3,7 @@ import java.rmi.RemoteException;
 import java.util.List;
 import java.util.Random;
 
+import db.IWideBoxDB;
 import server.IWideBox;
 import server.Message;
 import utilities.Session;
@@ -10,33 +11,45 @@ import utilities.Session;
 public class Requests {
 	
 	private IWideBox wb;
+	private IWideBoxDB db;
 	
-	public Requests(IWideBox wb) {
-		this.wb = wb;
+	public void setWideBox(IWideBox s, IWideBoxDB db) {
+		wb = s;
+		this.db = db;
 	}
 	
-	public void query(int client, String theatre) throws RemoteException {
+	public int getRateActualRateAppServerRequests() {
+		return -1;
+	}
+	
+	public int getRateActualRateDBServerRequests() {
+		return -1;
+	}
+	
+	public int query(int client, String theatre) throws RemoteException {
 		Message m2 = null;
 		
 		m2 = wb.seatsAvailable(client, theatre);
 		
 		if(m2.getStatus().equals(Message.AVAILABLE)) {
 			wb.cancelSeat(m2.getSession());
+			return 0;
 		}
 		
 		else if(m2.getStatus().equals(Message.FULL)) {
-			
+			return 0;
 		}
+		
+		return 0;
 	}
 	
-	public void purchase(int client, String theatre, List<String> listTheatres) throws RemoteException {
+	public  void purchase(int client, String theatre, List<String> listTheatres) throws RemoteException {
 		Message m2 = null;
 		Session ses = null;
 		int value = 0;
 		Random rand = new Random();
-		String curr = null;
 		
-		m2 = wb.seatsAvailable(Integer.toString(client), theatre);
+		m2 = wb.seatsAvailable(client, theatre);
 		ses = m2.getSession();
 		
 		if(m2.getStatus().equals(Message.AVAILABLE)) {
@@ -49,14 +62,14 @@ public class Requests {
 		}
 	}
 	
-	public void singleIdsingleTheatreQuery(int client, String theatre) {
+	public int singleIdsingleTheatreQuery(int client, String theatre) {
 		try {
-			query(client, theatre);
+			return query(client, theatre);
 		}
 		catch (RemoteException e) {
 			
 		}
-		
+		return 0;
 	}
 	
 	public void singleIdsingleTheatrePurchase(int client, String theatre) {
@@ -74,7 +87,7 @@ public class Requests {
 			List<String> m = wb.search().getTheatres().subList(min-1, max);
 			int size = m.size();
 			int value = rand.nextInt(size+1);
-		
+			
 			if (op.equals("QUERY"))
 				query(client, m.get(value));
 			
