@@ -99,7 +99,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		if (result) {
 			response = new Message(Message.AVAILABLE);
 			seats[getCharacterIndex(seat.substring(0, 1))]
-					[Integer.parseInt(seat.substring(1))-1] = Status.RESERVED;
+					[Integer.parseInt(seat.substring(1))] = Status.RESERVED;
 			response.setSeats(seats);
 			Session sess = new Session(id);
 			sess.setSeat(seat);
@@ -238,7 +238,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 					sessions.put(ses.getId(), tt);
 					seats = wideboxDBStub.listSeats(ses.getTheatre());
 					seats[getCharacterIndex(result.substring(0, 1))]
-							[Integer.parseInt(result.substring(1))-2] = Status.RESERVED;
+							[Integer.parseInt(result.substring(1))] = Status.RESERVED;
 					m.setSeats(seats);
 					Session sess = new Session(ses.getId());
 					sess.setSeat(result);
@@ -252,7 +252,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 					sessions.put(ses.getId(), tt);
 					seats = wideboxDBStub.listSeats(ses.getTheatre());
 					seats[getCharacterIndex(result.substring(0, 1))]
-							[Integer.parseInt(result.substring(1))-2] = Status.RESERVED;
+							[Integer.parseInt(result.substring(1))] = Status.RESERVED;
 					m.setSeats(seats);
 					Session sess = new Session(ses.getId());
 					sess.setSeat(ses.getSeat());
