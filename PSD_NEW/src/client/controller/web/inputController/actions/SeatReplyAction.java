@@ -68,8 +68,9 @@ public class SeatReplyAction extends Action{
 									model.setSeats(mens.getSeats());
 									model.setSeat(mens.getSession().getSeat());
 									model.setClientId(String.valueOf(mens.getSession().getId()));
+									model.addMessage("Your purchase is completed.");
 									
-									request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
+									request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);
 								}
 								else { 
 									model.addMessage("Your reservation has experired.");

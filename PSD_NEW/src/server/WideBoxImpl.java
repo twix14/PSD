@@ -99,7 +99,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		if (result) {
 			response = new Message(Message.AVAILABLE);
 			seats[getCharacterIndex(seat.substring(0, 1))]
-					[Integer.parseInt(seat.substring(1))-2] = Status.RESERVED;
+					[Integer.parseInt(seat.substring(1))-1] = Status.RESERVED;
 			response.setSeats(seats);
 			Session sess = new Session(id);
 			sess.setSeat(seat);
