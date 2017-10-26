@@ -34,6 +34,7 @@ public class SeatReplyAction extends Action{
 					try {
 						sess = new Session(Integer.parseInt(model.getClientId()));
 						sess.setSeat(model.getSeat());
+						sess.setTheatre(model.getTheatreId());
 					switch(model.getResult()) {
 					
 						case "YES":
