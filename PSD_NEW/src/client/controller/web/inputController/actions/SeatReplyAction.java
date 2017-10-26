@@ -61,7 +61,7 @@ public class SeatReplyAction extends Action{
 							break;
 							
 						default:
-							if (model.getResult().matches(REGEX)) {
+							//if (model.getResult().matches(REGEX)) {
 								
 								mens = widebox.reserveNewSeat(sess, model.getResult());
 								if (mens.getStatus().equals(Message.AVAILABLE)) {
@@ -78,14 +78,14 @@ public class SeatReplyAction extends Action{
 								}
 								
 								
-							} 
+							/*} 
 							else {
 								mens = widebox.seatsAvailable(model.getTheatreId());
 								//if (mens.getStatus().equals(Message.))
 								model.setSeats(mens.getSeats());
 								//model.setSeat();
 								request.getRequestDispatcher("/WEB-INF/AvailableSeats.jsp").forward(request, response);
-							}
+							}*/
 								
 								
 							break;
