@@ -1,5 +1,6 @@
 package loadGen;
 import java.rmi.RemoteException;
+import java.util.List;
 import java.util.Random;
 
 import server.IWideBox;
@@ -8,45 +9,34 @@ import server.Session;
 
 public class Requests {
 	
-	private static IWideBox wb;
+	private IWideBox wb;
 	
 	public Requests(IWideBox wb) {
 		this.wb = wb;
 	}
 	
-	public Message search() throws RemoteException {
-		return wb.search();	
-	}
-	
-	public void query(String theatre) throws RemoteException {
-		Message m = null;
+	public void query(int client, String theatre) throws RemoteException {
 		Message m2 = null;
 		
-		m = search();
-		m2 = wb.seatsAvailable(theatre);
+		m2 = wb.seatsAvailable(client, theatre);
 		
 		if(m2.getStatus().equals(Message.AVAILABLE)) {
-			wb.cancelSeat(m.getSession());
+			wb.cancelSeat(m2.getSession());
 		}
 		
-		else if(m.getStatus().equals(Message.FULL)) {
+		else if(m2.getStatus().equals(Message.FULL)) {
 			
 		}
 	}
 	
-	public void purchase(int client, String theatre) throws RemoteException {
-		Message m = null;
+	public void purchase(int client, String theatre, List<String> listTheatres) throws RemoteException {
 		Message m2 = null;
 		Session ses = null;
-		int size = 0;
 		int value = 0;
 		Random rand = new Random();
+		String curr = null;
 		
-		m = wb.search();
-		size = m.getTheatres().size();
-		
-		//value = rand.nextInt(size);
-		m2 = wb.seatsAvailable(Integer.toString(client));
+		m2 = wb.seatsAvailable(Integer.toString(client), theatre);
 		ses = m2.getSession();
 		
 		if(m2.getStatus().equals(Message.AVAILABLE)) {
@@ -54,7 +44,45 @@ public class Requests {
 		}
 		
 		else if (m2.getStatus().equals(Message.FULL)) {
-			purchase(client, );
+			value = rand.nextInt(listTheatres.size()+1);
+			purchase(client, listTheatres.get(value), listTheatres);
+		}
+	}
+	
+	public void singleIdsingleTheatreQuery(int client, String theatre) {
+		try {
+			query(client, theatre);
+		}
+		catch (RemoteException e) {
+			
+		}
+		
+	}
+	
+	public void singleIdsingleTheatrePurchase(int client, String theatre) {
+		try {
+			purchase(client, theatre, wb.search().getTheatres());
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public void singleIdrandomTheatre(int client, int min, int max, String op) {
+		try {
+			Random rand = new Random();
+			List<String> m = wb.search().getTheatres().subList(min-1, max);
+			int size = m.size();
+			int value = rand.nextInt(size+1);
+		
+			if (op.equals("QUERY"))
+				query(client, m.get(value));
+			
+			else
+				purchase(client, m.get(value), m);
+			}
+		catch (RemoteException e) {
+				
 		}
 	}
 
