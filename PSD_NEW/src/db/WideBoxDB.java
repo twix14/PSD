@@ -7,6 +7,7 @@ import java.util.stream.IntStream;
 
 import server.WideBoxImpl;
 import server.WideBoxServer;
+import utilities.Status;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -111,21 +112,11 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	public List<String> listTheatres() {
 		List<String> result = new ArrayList<String>();
-		for (int j = 1; j < NRTH; j++) {
-			result.add(Integer.toString(j));
-			/*String curr = Integer.toString(j);
-			String res = map.search(1, (key, value) -> {
-			    if (key.split("-")[0].equals(curr) && value.equals(Status.FREE)) {
-			        return curr;
-			    }
-			   return null;
-			});
-			
-			if (res != null)
-				result.add(curr);*/
-		}
-			return result;
-		}
+		for (int j = 1; j <= NRTH; j++) 
+			result.add(String.valueOf(j));
+		
+		return result;
+	}
 	
 			
 		/*List<String> teatros = new ArrayList<String>();
@@ -278,6 +269,11 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	public String get(String key) throws RemoteException {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	public void crash() throws RemoteException {
+		System.exit(0);
+		System.out.println("System crashed by failure generator!");
 	}
 
 

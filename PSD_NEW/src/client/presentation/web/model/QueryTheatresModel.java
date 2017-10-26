@@ -1,16 +1,8 @@
 package client.presentation.web.model;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
-import db.Status;
-import server.Session;
-import server.Theatre;
-
-//import facade.dto.DiscountDTO;
-//import facade.exceptions.ApplicationException;
-//import facade.handlers.ICustomerServiceRemote;
+import utilities.Status;
 
 /**
  * Helper class to assist in the response of novo cliente.

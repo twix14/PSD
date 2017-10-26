@@ -12,7 +12,7 @@ import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
 import server.IWideBox;
 import server.Message;
-import server.Session;
+import utilities.Session;
 
 public class SeatReplyAction extends Action{
 

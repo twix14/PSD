@@ -1,11 +1,7 @@
 package client.controller.web.inputController.actions;
 
 import java.io.IOException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.util.List;
 
-import javax.ejb.EJB;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,8 +10,8 @@ import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
 import server.IWideBox;
 import server.Message;
-import server.Theatre;
-import server.WideBoxServer;
+
+
 
 public class QueryTheatreAction extends Action {
 	

@@ -3,7 +3,8 @@ package server;
 import java.io.Serializable;
 import java.util.List;
 
-import db.Status;
+import utilities.Session;
+import utilities.Status;
 
 public class Message implements Serializable {
 

@@ -4,12 +4,9 @@ import java.io.IOException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.naming.Context;
 import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -69,7 +66,9 @@ public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final String SERVER_PORT = "5000";
-	private static final String SERVER_IP = "127.0.0.1";
+	private static final String SERVER_IP = "10.101.149.49";
+	
+	private static AtomicInteger serialClient;
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
@@ -78,8 +77,6 @@ public class FrontController extends HttpServlet {
 	 * Maps http actions to the objects that are going to handle them
 	 */
 	protected HashMap<String, String> actionHandlers;
-	
-	private Properties appProperties;
 	
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -116,20 +113,6 @@ public class FrontController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
 	}
-
-
-	/**
-	 * @param action The http request action.
-	 * @return the action associated with the http request.
-	 * In case no action is defined, the unknown action is
-	 * returns.
-	 */
-	private String getActionHandlerAddress(String action) {
-		String result = actionHandlers.get(action);
-		if (result == null)
-			result = actionHandlers.get("unknownAction");
-		return result;
-	}
 	
 	public static IWideBox getWideBoxServer() {
 		return wb;
@@ -137,6 +120,10 @@ public class FrontController extends HttpServlet {
 	
 	public InitialContext getInitialContex() {
 		return context;
+	}
+	
+	public static int getId() {
+		return serialClient.incrementAndGet();
 	}
 	
 	
@@ -150,7 +137,7 @@ public class FrontController extends HttpServlet {
 		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");
 		actionHandlers.put("action/QueryTheatre", "java:module/QueryTheatreAction");
 		//actionHandlers.put("", value)
-		appProperties = new Properties();
+		serialClient = new AtomicInteger();
 		try {
 			context = new InitialContext();
 			Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));

@@ -33,28 +33,39 @@
 		<!-- <tr>
 	    	<th></th>
 	    </tr> -->
+	 <%
+	 	String alf = "abcdefghijklmnopqrstuvwxyz";
+		char[] alphabet = alf.toUpperCase().toCharArray();
+		int row = 0;
+		int col = 1;
+		
+	 %>
 	 <c:forEach var="row" items="${model.seats}">
 	 	<tr>
 		  <c:forEach var="seat" items="${row}">
 		  <c:choose>
-		  	
+		  		
 		    	<c:when test="${seat.reserved}">
-		    	
-		    		<td class="green">R</td>
+		    		<td class="blue">
+		    			<% out.print(String.valueOf(alphabet[row])+col+" "); %></td>
 		    	</c:when>
 		    	<c:when test="${seat.occupied}">
-		    		<td class="blue">O</td>
+		    		<td class="red">
+		    			<% out.print(String.valueOf(alphabet[row])+col+" "); %></td>
 		    	</c:when>
 		    	<c:otherwise>
-		    		<td class="red">F</td>
+		    		<td class="green">
+		    			<% out.print(String.valueOf(alphabet[row])+col+" "); %></td>
 		    	</c:otherwise>
 		    	
 		  </c:choose>
+		  <% col++; %>
 		  </c:forEach>
-		  </tr>  	
-		  	
+		</tr>
+		<% col = 1; row++; %>  
 	  	  
 	  </c:forEach>
+	  
 	</table>
    </c:if>
    <div class="mandatory_field">
