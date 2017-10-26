@@ -5,6 +5,8 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.List;
 
+import utilities.Status;
+
 public interface IWideBoxDB extends Remote {
 	
 
@@ -19,4 +21,6 @@ public interface IWideBoxDB extends Remote {
 	public Status[][] listSeats(String theatre) throws RemoteException;
 	
 	public void printStatus(String theatre) throws RemoteException;
+
+	public void crash() throws RemoteException;
 }

@@ -7,7 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import client.presentation.web.model.Model;
-import db.Status;
+import utilities.Status;
 
 /**
  * An abstract HTTP action request handler. 

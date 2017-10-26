@@ -6,16 +6,15 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 import db.IWideBoxDB;
-import db.WideBoxDB;
 
 public class WideBoxServer {
 
 	private static final int WIDEBOXCLIENT_PORT = 5000;
 	private static final int WIDEBOXDB_PORT = 5001;
 	
-	private static final String MY_IP = "10.101.148.96";
+	private static final String MY_IP = "10.101.149.49";
 	
-	private static final String WIDEBOXDB_IP = "10.101.148.96";
+	private static final String WIDEBOXDB_IP = "10.101.149.49";
 	
 
 	public static void main(String[] args) throws Exception {

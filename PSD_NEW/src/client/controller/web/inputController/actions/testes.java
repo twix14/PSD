@@ -4,10 +4,10 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import db.Status;
 import server.Message;
-import server.Session;
 import server.WideBoxImpl.TimeoutThread;
+import utilities.Session;
+import utilities.Status;
 
 public class testes {
 

@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class WideBoxDBServer {
 	
-	private static final String MY_IP = "10.101.148.96";
+	private static final String MY_IP = "10.101.149.49";
 	
 	public static void main(String[] args) throws Exception {
 
@@ -27,10 +27,14 @@ public class WideBoxDBServer {
 		}
 		
 		Scanner sc = new Scanner(System.in);
-		while(true) {
-			String command = sc.nextLine();
-			String[] split = command.split(" ");
-			db.printStatus(split[2]);
+		try {
+			while(true) {
+				String command = sc.nextLine();
+				String[] split = command.split(" ");
+				db.printStatus(split[2]);
+			}
+		} finally {
+			sc.close();
 		}
 		
 

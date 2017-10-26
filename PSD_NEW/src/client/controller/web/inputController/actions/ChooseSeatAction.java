@@ -1,8 +1,6 @@
 package client.controller.web.inputController.actions;
 
 import java.io.IOException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -26,7 +24,8 @@ public class ChooseSeatAction extends Action {
 			
 			if (validInput(model)) {
 				try {
-					mens = widebox.seatsAvailable(model.getTheatreId());
+					mens = widebox.seatsAvailable(FrontController.getId()
+							, model.getTheatreId());
 					if (mens.getStatus().equals(Message.AVAILABLE)) {
 						model.setSeats(mens.getSeats());
 						model.setSeat(mens.getSession().getSeat());

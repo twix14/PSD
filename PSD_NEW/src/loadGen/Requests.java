@@ -5,7 +5,7 @@ import java.util.Random;
 
 import server.IWideBox;
 import server.Message;
-import server.Session;
+import utilities.Session;
 
 public class Requests {
 	

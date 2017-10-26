@@ -1,4 +1,4 @@
-package db;
+package utilities;
 
 public enum Status {
 	FREE, RESERVED, OCCUPIED;
