@@ -29,7 +29,7 @@ public class Generator {
 	private static final int SERVER_PORT = 5000;
 	private static final String DB_IP = "10.101.149.60";
 	private static final int DB_PORT = 5001;
-	private static final int ratePS = 200;
+	private static final int ratePS = 165;
 	
 	private static final int NRCL = 100000;
 	
