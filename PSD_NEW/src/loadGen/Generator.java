@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,13 +23,12 @@ public class Generator {
 	
 	public static AtomicInteger requests;
 	
-	private static final String SERVER_IP = "10.101.148.18";
+	private static final String SERVER_IP = "10.101.148.84";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "10.101.148.18";
+	private static final String DB_IP = "10.101.148.84";
 	private static final int DB_PORT = 5001;
 	
 	private static final int NRCL = 100000;
-	private static final int def = 20;
 	
 	public static void main(String[] args) {
 		new Generator(args);
@@ -64,7 +61,7 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 1, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 2, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -78,7 +75,7 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 2, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 2, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -92,7 +89,7 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 3, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 3, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -107,7 +104,7 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 4, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 4, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -122,7 +119,7 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 5, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 5, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -137,7 +134,7 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 6, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 6, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -151,7 +148,7 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOp(wb, wbDB, 7, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 7, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/500;
@@ -165,7 +162,7 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) { 
-					starOp(wb, wbDB, 8, split[4], 1, 0);
+					starOpWithoutRate(wb, wbDB, 8, split[4]);
 				
 				}else {
 					int n = Integer.parseInt(split[3]);
@@ -198,6 +195,34 @@ public class Generator {
 			last.kill();
 		}
 		
+	}
+	
+	public void starOpWithoutRate(IWideBox wb, IWideBoxDB wbDB, int op, String duration) {
+		try {
+				
+			Message m = wb.search();
+			AppServerRate app = new AppServerRate(wb);
+			DbServerRate db = new DbServerRate(wbDB);
+			Gen g = new Gen(wb, m, op);
+			g.start();
+			
+			GenRate gr = new GenRate();
+			app.start();
+			db.start();
+			gr.start();
+			
+			Thread.sleep(Integer.parseInt(duration) * 1000);
+			app.kill();
+			db.kill();
+			gr.kill();
+			g.kill();
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		} catch(InterruptedException e) {
+			e.printStackTrace();
+		}	catch (RemoteException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void starOp(IWideBox wb, IWideBoxDB wbDB, int op, String duration, 
@@ -310,10 +335,8 @@ public class Generator {
 			//Random rand2 = new Random()
 			int clientId = 0;
 			String theatre = null;
-			List<String> st= null;
 			Message m2 = null;
 			Session ses = null;
-			int value = 0;
 			switch(op) {
 			
 			//SSQ
