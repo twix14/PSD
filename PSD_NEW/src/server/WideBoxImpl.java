@@ -16,7 +16,7 @@ import utilities.Status;
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private static final long serialVersionUID = 240458129728788662L;
-	private static final int TIMEOUT = 1500000;
+	private static final int TIMEOUT = 15000;
 	
 	private  ConcurrentHashMap<String, TimeoutThread> sessions;
 	private AtomicInteger requests;
@@ -291,7 +291,6 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				Thread.sleep(1000);
 				res2 = requests.get();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		return  (res2-res1);
