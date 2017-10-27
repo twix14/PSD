@@ -1,47 +1,11 @@
 package client.controller.web.inputController.actions;
-import java.rmi.RemoteException;
-import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import server.Message;
-import server.WideBoxImpl.TimeoutThread;
-import utilities.Session;
-import utilities.Status;
 
 public class testes {
 
-   private static final String REGEX = "[A-Z][1-40]";
-   private static final String INPUT = "3";
- class TTThread extends Thread {
-
-			
-			public TTThread() {
-			
-			}
-			
-			public void run() {
-				//timeout of 30 seconds
-				
-				try {
-					Thread.sleep(15000);
-					
-					//Libertar lugar
-					
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				
-				return;
-			}
-}
    public static void main( String args[] ) {
-	   TTThread t = new TTThread();
-	 t.start();
-	 t.interrupt();
-	 t.interrupt();
-	 
-	 }}
+	   int processors = Runtime.getRuntime().availableProcessors();
+	   System.out.println(processors);
+   }}
       //Pattern p = Pattern.compile(REGEX);
       //Matcher m = p.matcher(INPUT);   // get a matcher object
 

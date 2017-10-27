@@ -13,8 +13,6 @@ public interface IWideBoxDB extends Remote {
 	public boolean put(String key, Status value, Status oldValue) throws RemoteException;
 
 	public String get(String key) throws RemoteException;
-
-	public String delete(String key) throws RemoteException;
 	
 	public List<String> listTheatres() throws RemoteException;
 	
@@ -23,4 +21,6 @@ public interface IWideBoxDB extends Remote {
 	public void printStatus(String theatre) throws RemoteException;
 
 	public void crash() throws RemoteException;
+	
+	public int getRate() throws RemoteException;
 }

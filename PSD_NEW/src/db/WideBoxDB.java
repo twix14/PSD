@@ -1,30 +1,14 @@
 package db;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.IntStream;
-
-import server.WideBoxImpl;
-import server.WideBoxServer;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import utilities.Status;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.PrintWriter;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
 
 
 public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
@@ -35,22 +19,18 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final long serialVersionUID = 1L;
 
 	private ConcurrentHashMap<String, Status> map;
-	private File log;
+	//private File log;
 	
 	private static final int NRTH = 300;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
 	
-
-	private static final String PUT_OK = "put_ok";
-	private static final String PUT_OCC = "lugar ja esta ocupado";
-	private static final String PUT_RES = "lugar ja esta reservado";
-	private static final String DELETE_OK = "delete_ok";
-	private static final String DELETE_NOT_OK = "delete_not_ok";
+	private AtomicInteger requests;
 	
 	protected WideBoxDB() throws RemoteException {
 		super();
 		loadDB();
+		requests = new AtomicInteger();
 		//log = new File("log.txt");
 		// TODO Auto-generated constructor stub
 	}
@@ -76,6 +56,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			result =  true;
 		}
 		//out.close();
+		requests.incrementAndGet();
 		return result;
 			
 	}
@@ -88,26 +69,10 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				char linha = getCharLine(i);
 				coluna = j+1;
 				listSeats[i][j] = map.get(theatre + "-" + linha + Integer.toString(coluna));
-				System.out.print(String.valueOf(linha) + j + "-" + listSeats[i][j] + " ");
+				System.out.print(String.valueOf(linha) + (j+1) + "-" + listSeats[i][j] + " ");
 			}
 			System.out.print("\n");
 		}
-	}
-
-	public String delete(String key) throws RemoteException {
-		if (map.get(key) != null) {
-			map.remove(key);
-			map.put(key, Status.FREE);
-			try {
-				BufferedWriter bw = new BufferedWriter (new FileWriter ("log.txt"));
-				bw.write("delete " + key);
-				bw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			return DELETE_OK;
-		} else
-			return DELETE_NOT_OK;
 	}
 
 	public List<String> listTheatres() {
@@ -115,6 +80,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		for (int j = 1; j <= NRTH; j++) 
 			result.add(String.valueOf(j));
 		
+		requests.incrementAndGet();
 		return result;
 	}
 	
@@ -160,7 +126,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				coluna = j+1;
 				listSeats[i][j] = map.get(theatre + "-" + linha + Integer.toString(coluna));
 			}
-
+		
+		requests.incrementAndGet();
 		return listSeats;
 
 	}
@@ -274,6 +241,20 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	public void crash() throws RemoteException {
 		System.exit(0);
 		System.out.println("System crashed by failure generator!");
+	}
+	
+	public int getRate() throws RemoteException{
+		int res1= 0;
+		int res2 = 0;
+			try {
+				res1 = requests.get();
+				Thread.sleep(1000);
+				res2 = requests.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		return  (res2-res1);
 	}
 
 

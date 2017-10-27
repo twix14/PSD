@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class WideBoxDBServer {
 	
-	private static final String MY_IP = "10.101.149.49";
+	private static final String MY_IP = "10.101.148.102";
 	
 	public static void main(String[] args) throws Exception {
 

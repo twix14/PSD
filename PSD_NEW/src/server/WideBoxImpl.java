@@ -6,6 +6,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import db.IWideBoxDB;
@@ -18,6 +19,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private static final int TIMEOUT = 1500000;
 	
 	private  ConcurrentHashMap<String, TimeoutThread> sessions;
+	private AtomicInteger requests;
 	
 	ReentrantLock lock = new ReentrantLock();
 	
@@ -30,6 +32,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public WideBoxImpl(IWideBoxDB db) throws RemoteException {
 		this.wideboxDBStub = db;
 		//ver params iniciais
+		requests = new AtomicInteger();
 		this.sessions = new ConcurrentHashMap<String,TimeoutThread>();
 	}
 
@@ -38,7 +41,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public Message search() throws RemoteException {
 		Message m = new Message(Message.THEATRES);
 		m.setTheatres(wideboxDBStub.listTheatres());
-		
+		requests.incrementAndGet();
 		return m;
 	}
 	
@@ -48,9 +51,11 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		List<String> available;
 		
 		if(!(available = getEmptySeats(seats)).isEmpty()) {
+			requests.incrementAndGet();
 			return assignSeat(theater, available, clientId, seats);
 		
 		} else {
+			requests.incrementAndGet();
 			return new Message(Message.FULL);
 		}
 	}
@@ -180,6 +185,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		/*} catch (InterruptedException e) {
 			
 		}*/
+		requests.incrementAndGet();
 		return m;
 		/*try {
 		 * t.interrupt();
@@ -248,6 +254,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		} finally {
 			lock.unlock();
 		}
+		requests.incrementAndGet();
 		return m;
 	}
 
@@ -267,12 +274,27 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		/*} catch (InterruptedException e) {
 			
 		}*/
+		requests.incrementAndGet();
 		return m;
 	}
 	
 	public void crash() throws RemoteException {
 		System.exit(0);
 		System.out.println("System crashed by failure generator");
+	}
+	
+	public int getRate() throws RemoteException{
+		int res1= 0;
+		int res2 = 0;
+			try {
+				res1 = requests.get();
+				Thread.sleep(1000);
+				res2 = requests.get();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		return  (res2-res1);
 	}
 
 }

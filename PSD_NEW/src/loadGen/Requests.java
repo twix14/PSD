@@ -18,15 +18,15 @@ public class Requests {
 		this.db = db;
 	}
 	
-	public int getRateActualRateAppServerRequests() {
-		return -1;
+	public int getRateActualRateAppServerRequests() throws RemoteException {
+		return wb.getRate();
 	}
 	
-	public int getRateActualRateDBServerRequests() {
-		return -1;
+	public int getRateActualRateDBServerRequests() throws RemoteException {
+		return db.getRate();
 	}
 	
-	public int query(int client, String theatre) throws RemoteException {
+	public static int query(IWideBox wb, int client, String theatre) throws RemoteException {
 		Message m2 = null;
 		
 		m2 = wb.seatsAvailable(client, theatre);
@@ -62,9 +62,9 @@ public class Requests {
 		}
 	}
 	
-	public int singleIdsingleTheatreQuery(int client, String theatre) {
+	public static int singleIdsingleTheatreQuery(IWideBox wb, int client, String theatre) {
 		try {
-			return query(client, theatre);
+			return query(wb, client, theatre);
 		}
 		catch (RemoteException e) {
 			
@@ -80,7 +80,7 @@ public class Requests {
 			e.printStackTrace();
 		}
 	}
-	
+	/*
 	public void singleIdrandomTheatre(int client, int min, int max, String op) {
 		try {
 			Random rand = new Random();
@@ -97,6 +97,6 @@ public class Requests {
 		catch (RemoteException e) {
 				
 		}
-	}
+	}**/
 
 }
