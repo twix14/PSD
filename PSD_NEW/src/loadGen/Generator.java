@@ -25,9 +25,9 @@ public class Generator {
 	
 	public static AtomicInteger requests;
 	
-	private static final String SERVER_IP = "10.101.148.102";
+	private static final String SERVER_IP = "10.101.148.18";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "10.101.148.102";
+	private static final String DB_IP = "10.101.148.18";
 	private static final int DB_PORT = 5001;
 	
 	private static final int NRCL = 100000;
@@ -64,7 +64,13 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 1, split[4]);
+					starOp(wb, wbDB, 1, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 1, split[4], (int) nThreads + 1 ,  lag);
 				}
 			}
 			
@@ -72,7 +78,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 2, split[4]);
+					starOp(wb, wbDB, 2, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 2, split[4], (int) nThreads + 1 ,  lag);
 				}
 			}
 			
@@ -80,7 +92,13 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 3, split[4]);
+					starOp(wb, wbDB, 3, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 3, split[4], (int) nThreads + 1 ,  lag);
 				}
 					
 			}
@@ -89,7 +107,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 4, split[4]);
+					starOp(wb, wbDB, 4, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 4, split[4], (int) nThreads + 1 ,  lag);
 				}
 					
 			}
@@ -98,7 +122,13 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 5, split[4]);
+					starOp(wb, wbDB, 5, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 5, split[4], (int) nThreads + 1 ,  lag);
 				}
 					
 			}
@@ -107,7 +137,13 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 6, split[4]);
+					starOp(wb, wbDB, 6, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 6, split[4], (int) nThreads + 1 ,  lag);
 				}
 			}
 			
@@ -115,7 +151,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					//starOp(wb, wbDB, 7, split[4]);
+					starOp(wb, wbDB, 7, split[4], 1, 0);
+				} else {
+					int n = Integer.parseInt(split[3]);
+					double nThreads = n/500;
+					//em media 500, disparar 1 thread para medir o valor medio
+					double lag = Math.abs(nThreads - ((int) nThreads + 1));
+					starOp(wb, wbDB, 7, split[4], (int) nThreads + 1 ,  lag);
 				}
 			}
 			
@@ -123,7 +165,7 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) { 
-					//starOp(wb, wbDB, 8, split[4]);
+					starOp(wb, wbDB, 8, split[4], 1, 0);
 				
 				}else {
 					int n = Integer.parseInt(split[3]);
@@ -171,10 +213,12 @@ public class Generator {
 				list.add(g);
 				g.start();
 			}
-			Gen last = new Gen(wb, m, op);
-			last.start();
-			Delay d = new Delay(last, (int) lag * 1000);
-			d.start();
+			if(!(lag == 0)) {
+				Gen last = new Gen(wb, m, op);
+				last.start();
+				Delay d = new Delay(last, (int) lag * 1000);
+				d.start();
+			}
 			
 			GenRate gr = new GenRate();
 			app.start();
@@ -185,7 +229,7 @@ public class Generator {
 			app.kill();
 			db.kill();
 			gr.kill();
-			for(int i = 0; i < numThreads; i++) {
+			for(int i = 0; i < numThreads-1; i++) {
 				list.get(i).kill();
 			}
 		} catch (NumberFormatException e) {
