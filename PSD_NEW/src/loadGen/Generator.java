@@ -10,6 +10,7 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import db.IWideBoxDB;
 import server.IWideBox;
@@ -22,10 +23,11 @@ public class Generator {
 	public static AtomicInteger duration;
 	
 	public static AtomicInteger requests;
+	public static AtomicLong avglatency;
 	
-	private static final String SERVER_IP = "10.101.148.84";
+	private static final String SERVER_IP = "10.101.149.60";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "10.101.148.84";
+	private static final String DB_IP = "10.101.149.60";
 	private static final int DB_PORT = 5001;
 	private static final int ratePS = 200;
 	
@@ -48,6 +50,7 @@ public class Generator {
 			e.printStackTrace();
 		}
 		requests = new AtomicInteger();
+		avglatency = new AtomicLong();
 		
 		System.out.println("LOAD GENERATOR STARTED");
 		while(true) {
@@ -360,7 +363,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -385,7 +388,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -410,7 +413,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -435,7 +438,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -463,7 +466,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -491,7 +494,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -520,7 +523,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -549,7 +552,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					long t1 = System.nanoTime();
-					System.out.println("Request took " + TimeUnit.NANOSECONDS.toMillis(t1-t0) + "ms");
+					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 					requests.incrementAndGet();
 				}
 				break;
@@ -595,6 +598,9 @@ public class Generator {
 						e.printStackTrace();
 					}
 					int res2 = requests.get();
+					long lat = avglatency.get();
+					System.out.println("Avg latency - " + lat/(res2-res1));
+					avglatency.set(0);
 					System.out.println("Load Generator rate - " + (res2-res1));
 			}
 		}
