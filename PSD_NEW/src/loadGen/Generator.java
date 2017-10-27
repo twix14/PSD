@@ -27,6 +27,7 @@ public class Generator {
 	private static final int SERVER_PORT = 5000;
 	private static final String DB_IP = "10.101.148.84";
 	private static final int DB_PORT = 5001;
+	private static final int ratePS = 200;
 	
 	private static final int NRCL = 100000;
 	
@@ -61,10 +62,10 @@ public class Generator {
 					split[1].equals("s") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 2, split[4]);
+					starOpWithoutRate(wb, wbDB, 1, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 1, split[4], (int) nThreads + 1 ,  lag);
@@ -78,7 +79,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 2, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 2, split[4], (int) nThreads + 1 ,  lag);
@@ -92,7 +93,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 3, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 3, split[4], (int) nThreads + 1 ,  lag);
@@ -107,7 +108,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 4, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 4, split[4], (int) nThreads + 1 ,  lag);
@@ -122,7 +123,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 5, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 5, split[4], (int) nThreads + 1 ,  lag);
@@ -137,7 +138,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 6, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 6, split[4], (int) nThreads + 1 ,  lag);
@@ -151,7 +152,7 @@ public class Generator {
 					starOpWithoutRate(wb, wbDB, 7, split[4]);
 				} else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 7, split[4], (int) nThreads + 1 ,  lag);
@@ -166,7 +167,7 @@ public class Generator {
 				
 				}else {
 					int n = Integer.parseInt(split[3]);
-					double nThreads = n/500;
+					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
 					starOp(wb, wbDB, 8, split[4], (int) nThreads + 1 ,  lag);
@@ -594,8 +595,7 @@ public class Generator {
 						e.printStackTrace();
 					}
 					int res2 = requests.get();
-					System.out.println("Load Generator processing " + (res2-res1)
-						+ " req/sec ");
+					System.out.println("Load Generator rate - " + (res2-res1));
 			}
 		}
 		

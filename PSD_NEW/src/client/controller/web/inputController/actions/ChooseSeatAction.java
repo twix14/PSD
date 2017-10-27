@@ -13,7 +13,6 @@ import server.Message;
 
 public class ChooseSeatAction extends Action {
 		
-		@Override
 		public void process(HttpServletRequest request, HttpServletResponse response) 
 				throws ServletException, IOException {
 
@@ -34,6 +33,7 @@ public class ChooseSeatAction extends Action {
 					else {
 						model.addMessage("No available seats, session full.");
 						request.getRequestDispatcher("/WEB-INF/Result.jsp").forward(request, response);
+						return;
 					}
 				} catch (Exception e) {
 					e.printStackTrace();

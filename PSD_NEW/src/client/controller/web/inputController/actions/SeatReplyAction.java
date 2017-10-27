@@ -20,8 +20,6 @@ public class SeatReplyAction extends Action{
 
 			IWideBox widebox = FrontController.getWideBoxServer();
 			
-			
-			@Override
 			public void process(HttpServletRequest request, HttpServletResponse response) 
 					throws ServletException, IOException {
 

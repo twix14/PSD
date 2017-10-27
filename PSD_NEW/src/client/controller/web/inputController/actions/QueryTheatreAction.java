@@ -14,8 +14,7 @@ import server.Message;
 
 
 public class QueryTheatreAction extends Action {
-	
-	@Override
+
 	public void process(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException {
 

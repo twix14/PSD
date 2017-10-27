@@ -144,6 +144,20 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				}
 		}
 	}
+	
+	public void fullTheatre(String theatre) throws RemoteException{
+		int coluna = 0;
+		String key = null;
+		for(int i = 0; i < NRRW; i++) {
+			for (int j = 0; j < NRCL; j++) {
+				char linha = getCharLine(i);
+				coluna = j+1;
+				key = theatre + "-" +linha + Integer.toString(coluna);
+				map.replace(key, Status.FREE, Status.OCCUPIED);
+			}
+		}
+		System.out.println("Done");
+	}
 
 
 	private char getCharLine(int i) {

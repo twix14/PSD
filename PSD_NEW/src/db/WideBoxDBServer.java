@@ -6,7 +6,7 @@ import java.util.Scanner;
 
 public class WideBoxDBServer {
 	
-	private static final String MY_IP = "10.101.148.102";
+	private static final String MY_IP = "10.101.148.84";
 	
 	public static void main(String[] args) throws Exception {
 
@@ -19,6 +19,7 @@ public class WideBoxDBServer {
 			registry.rebind("WideBoxDBServer", db);
 			System.out.println("DB loaded\n");
 			System.out.println("'print db n-theatre' command to print status of a theatre");
+			System.out.println("Or 'full n-theatre' to full a theatre");
 			
 			
 			//
@@ -31,7 +32,10 @@ public class WideBoxDBServer {
 			while(true) {
 				String command = sc.nextLine();
 				String[] split = command.split(" ");
-				db.printStatus(split[2]);
+				if (split[0].equals("print"))
+					db.printStatus(split[2]);
+				if(split[0].equals("full"))
+					db.fullTheatre(split[1]);
 			}
 		} finally {
 			sc.close();

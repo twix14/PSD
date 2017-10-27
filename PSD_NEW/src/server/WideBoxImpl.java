@@ -67,13 +67,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	 * @throws RemoteException 
 	 */
 	private Message assignSeat(String theater, List<String> available, int id, Status[][] seats) throws RemoteException {
-			lock.lock();
-			try {
+			
 				return assignSeatAux(theater, available, id, seats);
-				
-			} finally {
-				lock.unlock();
-			}
+			
 	}
 	
 	public Message assignSeatAux(String theater, List<String> available, int id, Status[][] seats) throws RemoteException {
