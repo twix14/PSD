@@ -18,6 +18,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final long serialVersionUID = 1L;
 
 	private ConcurrentHashMap<String, Status> map;
+	
 	//private File log;
 	
 	private static final int NRTH = 300;
