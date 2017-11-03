@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -27,6 +28,7 @@ public class WideBoxDB2 extends UnicastRemoteObject implements IWideBoxDB {
 	private static final int NRTH = 300;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
+	private static final int NROPS = 1000;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;
@@ -42,7 +44,7 @@ public class WideBoxDB2 extends UnicastRemoteObject implements IWideBoxDB {
 		super();
 		loadDB();
 		requests = new AtomicInteger();
-		ops = new AtomicInteger(1000);
+		ops = new AtomicInteger(NROPS);
 		lock = new ReentrantLock();
 		log = new File("log.txt");
 		fileHash = new File("theatres.txt");
@@ -87,6 +89,7 @@ public class WideBoxDB2 extends UnicastRemoteObject implements IWideBoxDB {
 			ops.decrementAndGet();
 			if(ops.get() == 0) {
 				updateFileHash();
+				ops.set(NROPS);
 			}
 			fl.close();
 		} catch (IOException e) {
@@ -117,7 +120,6 @@ public class WideBoxDB2 extends UnicastRemoteObject implements IWideBoxDB {
 		requests.incrementAndGet();
 		return result;
 	}
-	
 
 	public Status[][] listSeats(String theatre) throws RemoteException {
 		Status [][] listSeats = new Status[NRRW][NRCL];
@@ -154,14 +156,29 @@ public class WideBoxDB2 extends UnicastRemoteObject implements IWideBoxDB {
 	}
 	
 	private void updateFileHash() {
-		
+		try {
+	         FileOutputStream fileOut =
+	         new FileOutputStream(fileHash);
+	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
+	         out.writeObject(map);
+	         fileOut.flush();
+	         fileOut.getFD().sync();
+	         out.close();
+	         fileOut.close();
+	         System.out.printf("Serialized data is saved in Theatres.txt");
+	      } catch (IOException i) {
+	         i.printStackTrace();
+	      }
 	}
 
-
 	@Override
-	public String get(String key) throws RemoteException {
-		// TODO Auto-generated method stub
-		return null;
+	public String get(String theatre) throws RemoteException {
+		ConcurrentHashMap<String,Status> curr = map.get(theatre);
+		return curr.search(1, (k, v) -> {
+				if (v.equals(Status.FREE))
+					return k; 
+				return null;
+				});
 	}
 	
 	public void crash() throws RemoteException {

@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -41,6 +43,7 @@ public class Generator {
 		Scanner sc = new Scanner(System.in);
 		IWideBox wb = null;
 		IWideBoxDB wbDB = null;
+		ExecutorService es= null;
 		try {
 			Registry registry = LocateRegistry.getRegistry(SERVER_IP, SERVER_PORT);
 			wb = (IWideBox) registry.lookup("WideBoxServer");
@@ -51,6 +54,7 @@ public class Generator {
 		}
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
+		es = Executors.newWorkStealingPool();
 		
 		System.out.println("LOAD GENERATOR STARTED");
 		while(true) {
@@ -58,161 +62,147 @@ public class Generator {
 			System.out.println("Comando----->");
 			String command = sc.nextLine();
 			String[] split = command.split(",");
-			//db.printStatus(split[2]);
 		
-			
-			if (split[0].equals("s") && 
-					split[1].equals("s") && split[2].equals("q")) {
+			//SSQ
+			if (!split[0].equals("r") && 
+					!split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 1, split[4]);
+					starOpWithoutRate(wb, wbDB, 1, split[4], Integer.parseInt(split[0]), split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 1, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 1, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
 				}
 			}
 			
-			if (split[0].equals("s") && 
+			//SRQ
+			if (!split[0].equals("r") && 
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 2, split[4]);
+					starOpWithoutRate(wb, wbDB, 2, split[4], Integer.parseInt(split[0]), null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 2, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 2, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
 				}
 			}
 			
+			//RSQ
 			if (split[0].equals("r") && 
-					split[1].equals("s") && split[2].equals("q")) {
+					!split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 3, split[4]);
+					starOpWithoutRate(wb, wbDB, 3, split[4], 0, split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 3, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 3, split[4], (int) nThreads + 1 ,  lag, 0, split[1], es);
 				}
 					
 			}
 			
+			//RRQ
 			if (split[0].equals("r") && 
 					split[1].equals("r") && split[2].equals("q")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 4, split[4]);
+					starOpWithoutRate(wb, wbDB, 4, split[4], 0, null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 4, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 4, split[4], (int) nThreads + 1 ,  lag, 0, null, es);
 				}
 					
 			}
 			
-			if (split[0].equals("s") && 
-					split[1].equals("s") && split[2].equals("p")) {
+			//SSP
+			if (!split[0].equals("r") && 
+					!split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 5, split[4]);
+					starOpWithoutRate(wb, wbDB, 5, split[4], Integer.parseInt(split[0]), split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 5, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 5, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
 				}
 					
 			}
 			
+			//RSP
 			if (split[0].equals("r") && 
-					split[1].equals("s") && split[2].equals("p")) {
+					!split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 6, split[4]);
+					starOpWithoutRate(wb, wbDB, 6, split[4], 0, split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 6, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 6, split[4], (int) nThreads + 1 ,  lag, 0, split[1], es);
 				}
 			}
 			
-			if (split[0].equals("s") && 
+			//SRP
+			if (!split[0].equals("r") && 
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 7, split[4]);
+					starOpWithoutRate(wb, wbDB, 7, split[4], Integer.parseInt(split[0]), null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 7, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 7, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
 				}
 			}
 			
+			//RRP
 			if (split[0].equals("r") && 
 					split[1].equals("r") && split[2].equals("p")) {
 				
 				if(split[3].equals(" ")) { 
-					starOpWithoutRate(wb, wbDB, 8, split[4]);
+					starOpWithoutRate(wb, wbDB, 8, split[4], 0, null, es);
 				
 				}else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 8, split[4], (int) nThreads + 1 ,  lag);
+					starOp(wb, wbDB, 8, split[4], (int) nThreads + 1 ,  lag, 0, null, es);
 				}
 			}
 		}
 		
 	}
 	
-	public class Delay extends Thread {
-		
-		private Gen last;
-		private int duration;
-		
-		public Delay(Gen last, int duration) {
-			this.last = last;
-			this.duration = duration;
-		}
-		
-		public void run() {
-			try {
-				Thread.sleep(duration);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			last.kill();
-		}
-		
-	}
-	
-	public void starOpWithoutRate(IWideBox wb, IWideBoxDB wbDB, int op, String duration) {
+	public void starOpWithoutRate(IWideBox wb, IWideBoxDB wbDB, int op, String duration, int clientId, String theatre, 
+			ExecutorService es) {
 		try {
 				
 			Message m = wb.search();
 			AppServerRate app = new AppServerRate(wb);
 			DbServerRate db = new DbServerRate(wbDB);
-			Gen g = new Gen(wb, m, op);
-			g.start();
+			Gen g = new Gen(wb, m, op, clientId, theatre);
+			es.execute(g);
 			
 			GenRate gr = new GenRate();
-			app.start();
-			db.start();
+			es.execute(app);
+			es.execute(db);
 			gr.start();
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
@@ -220,17 +210,13 @@ public class Generator {
 			db.kill();
 			gr.kill();
 			g.kill();
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException | InterruptedException | RemoteException e) {
 			e.printStackTrace();
-		} catch(InterruptedException e) {
-			e.printStackTrace();
-		}	catch (RemoteException e) {
-			e.printStackTrace();
-		}
+		} 
 	}
 	
 	public void starOp(IWideBox wb, IWideBoxDB wbDB, int op, String duration, 
-			int numThreads, double lag) {
+			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
 				
 			Message m = wb.search();
@@ -238,20 +224,20 @@ public class Generator {
 			DbServerRate db = new DbServerRate(wbDB);
 			List<Gen> list = new ArrayList<>();
 			for(int i = 0; i < numThreads-1; i++) {
-				Gen g = new Gen(wb, m, op);
+				Gen g = new Gen(wb, m, op, clientId, theatre);
 				list.add(g);
-				g.start();
+				es.execute(g);
 			}
 			if(!(lag == 0)) {
-				Gen last = new Gen(wb, m, op);
-				last.start();
+				Gen last = new Gen(wb, m, op, clientId, theatre);
+				es.execute(last);
 				Delay d = new Delay(last, (int) lag * 1000);
-				d.start();
+				es.execute(d);
 			}
 			
 			GenRate gr = new GenRate();
-			app.start();
-			db.start();
+			es.execute(app);
+			es.execute(db);
 			gr.start();
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
@@ -261,17 +247,12 @@ public class Generator {
 			for(int i = 0; i < numThreads-1; i++) {
 				list.get(i).kill();
 			}
-		} catch (NumberFormatException e) {
+		} catch (NumberFormatException | InterruptedException | RemoteException e) {
 			e.printStackTrace();
-		} catch(InterruptedException e) {
-			e.printStackTrace();
-		}	catch (RemoteException e) {
-			e.printStackTrace();
-		}
+		} 
 	}
 
-	
-	public class AppServerRate extends Thread {
+	public class AppServerRate implements Runnable {
 		
 		private IWideBox wb;
 		private volatile boolean keepGoing = true;
@@ -296,7 +277,7 @@ public class Generator {
 		}
 	}
 	
-	public class DbServerRate extends Thread {
+	public class DbServerRate implements Runnable {
 		
 		private IWideBoxDB wbDB;
 		private volatile boolean keepGoing = true;
@@ -321,239 +302,118 @@ public class Generator {
 		}
 	}
 	
-	public class Gen extends Thread {
+	public class Delay implements Runnable {
+		
+		private Gen last;
+		private int duration;
+		
+		public Delay(Gen last, int duration) {
+			this.last = last;
+			this.duration = duration;
+		}
+		
+		public void run() {
+			try {
+				Thread.sleep(duration);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			last.kill();
+		}
+		
+	}
+	
+	public class Gen implements Runnable {
 		
 		private IWideBox wb;
 		private volatile boolean keepGoing = true;
 		private Message m;
 		private int op;
+		private int clientId;
+		private String theatre;
 		
-		public Gen(IWideBox wb, Message m, int op) {
+		public Gen(IWideBox wb, Message m, int op, int clientId, String theatre) {
 			this.wb = wb;
 			this.m = m;
 			this.op = op;
+			this.clientId = clientId;
+			this.theatre = theatre;
 		}
 		
 		public void run() {
 			Random rand = new Random();
 			//Random rand2 = new Random()
-			int clientId = 0;
-			String theatre = null;
 			Message m2 = null;
 			Session ses = null;
 			switch(op) {
 			
 			//SSQ
 			case 1:
-				clientId = rand.nextInt(NRCL);
-				 theatre= m.getTheatres().get(rand.nextInt(
-						m.getTheatres().size()));
 				while(keepGoing) {
-					long t0 = System.nanoTime();
-					try {
-						m2 = wb.seatsAvailable(clientId,theatre);
-						
-						if(m2.getStatus().equals(Message.AVAILABLE)) {
-							wb.cancelSeat(m2.getSession());
-						}
-						
-						else if(m2.getStatus().equals(Message.FULL)) {
-						}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					query(clientId, theatre, m2);
 				}
 				break;
 				
 			//SRQ	
-			case 2:
-				clientId = rand.nextInt(NRCL);				
+			case 2:			
 				while(keepGoing) {
-					long t0 = System.nanoTime();
 					theatre = m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
-					try {
-						m2 = wb.seatsAvailable(clientId,theatre);
-						
-						if(m2.getStatus().equals(Message.AVAILABLE)) {
-							wb.cancelSeat(m2.getSession());
-						}
-						
-						else if(m2.getStatus().equals(Message.FULL)) {
-						}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					
+					query(clientId, theatre, m2);
 				}
 				break;
 				
 			//RSQ	
 			case 3:
-				 theatre= m.getTheatres().get(rand.nextInt(
-						m.getTheatres().size()));
 				while(keepGoing) {
-					long t0 = System.nanoTime();
 					clientId = rand.nextInt(NRCL);
-					try {
-						m2 = wb.seatsAvailable(clientId,theatre);
-						
-						if(m2.getStatus().equals(Message.AVAILABLE)) {
-							wb.cancelSeat(m2.getSession());
-						}
-						
-						else if(m2.getStatus().equals(Message.FULL)) {
-						}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					query(clientId, theatre, m2);
 				}
 				break;
 			
 			//RRQ
 			case 4:
 				while(keepGoing) {
-					long t0 = System.nanoTime();
 					theatre= m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
 					clientId = rand.nextInt(NRCL);
-					try {
-						m2 = wb.seatsAvailable(clientId,theatre);
-						
-						if(m2.getStatus().equals(Message.AVAILABLE)) {
-							wb.cancelSeat(m2.getSession());
-						}
-						
-						else if(m2.getStatus().equals(Message.FULL)) {
-						}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					
+					query(clientId, theatre, m2);
 				}
 				break;
 				
 			//SSP	
 			case 5:
-				clientId = rand.nextInt(NRCL);
-				theatre= m.getTheatres().get(rand.nextInt(
-						m.getTheatres().size()));
 				while(keepGoing) {
-					long t0 = System.nanoTime();
-					try {
-					m2 = wb.seatsAvailable(clientId, theatre);
-					ses = m2.getSession();
-					
-					if(m2.getStatus().equals(Message.AVAILABLE)) {
-						wb.acceptSeat(ses);
-					}
-					
-					else if (m2.getStatus().equals(Message.FULL)) {
-						purchase(clientId, m.getTheatres().get(rand.nextInt(
-								m.getTheatres().size())), m.getTheatres());
-					}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					purch(clientId, theatre, m2, ses, rand);
 				}
 				break;
 				
 			//RSP
 			case 6:
-				theatre= m.getTheatres().get(rand.nextInt(
-						m.getTheatres().size()));
 				while(keepGoing) {
-					long t0 = System.nanoTime();
 					clientId = rand.nextInt(NRCL);
-					try {
-					m2 = wb.seatsAvailable(clientId, theatre);
-					ses = m2.getSession();
-					
-					if(m2.getStatus().equals(Message.AVAILABLE)) {
-						wb.acceptSeat(ses);
-					}
-					
-					else if (m2.getStatus().equals(Message.FULL)) {
-						purchase(clientId, m.getTheatres().get(rand.nextInt(
-								m.getTheatres().size())), m.getTheatres());
-					}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					purch(clientId, theatre, m2, ses, rand);
 				}
 				break;
 			
 			//SRP
 			case 7:
-				clientId = rand.nextInt(NRCL);
 				while(keepGoing) {
-					long t0 = System.nanoTime();
 					theatre= m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
-					clientId = rand.nextInt(NRCL);
-					try {
-					m2 = wb.seatsAvailable(clientId, theatre);
-					ses = m2.getSession();
-					
-					if(m2.getStatus().equals(Message.AVAILABLE)) {
-						wb.acceptSeat(ses);
-					}
-					
-					else if (m2.getStatus().equals(Message.FULL)) {
-						purchase(clientId, m.getTheatres().get(rand.nextInt(
-								m.getTheatres().size())), m.getTheatres());
-					}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					purch(clientId, theatre, m2, ses, rand);
 				}
 				break;
 				
 			//RRP	
 			case 8:
 				while(keepGoing) {
-					long t0 = System.nanoTime();
-					clientId = rand.nextInt(NRCL);
 					theatre= m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
 					clientId = rand.nextInt(NRCL);
-					try {
-					m2 = wb.seatsAvailable(clientId, theatre);
-					ses = m2.getSession();
-					
-					if(m2.getStatus().equals(Message.AVAILABLE)) {
-						wb.acceptSeat(ses);
-					}
-					
-					else if (m2.getStatus().equals(Message.FULL)) {
-						purchase(clientId, m.getTheatres().get(rand.nextInt(
-								m.getTheatres().size())), m.getTheatres());
-					}
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-					long t1 = System.nanoTime();
-					avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-					requests.incrementAndGet();
+					purch(clientId, theatre, m2, ses, rand);
 				}
 				break;
 			}
@@ -577,6 +437,47 @@ public class Generator {
 				value = rand.nextInt(listTheatres.size()+1);
 				purchase(client, listTheatres.get(value), listTheatres);
 			}
+		}
+		
+		private void query (int clientId, String theatre, Message m2) {
+			long t0 = System.nanoTime();
+			try {
+				m2 = wb.seatsAvailable(clientId,theatre);
+				
+				if(m2.getStatus().equals(Message.AVAILABLE)) {
+					wb.cancelSeat(m2.getSession());
+				}
+				
+				else if(m2.getStatus().equals(Message.FULL)) {
+				}
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			long t1 = System.nanoTime();
+			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
+			requests.incrementAndGet();
+		}
+		
+		private void purch(int clientId, String theatre, Message m2, Session ses, Random rand) {
+			long t0 = System.nanoTime();
+			try {
+			m2 = wb.seatsAvailable(clientId, theatre);
+			ses = m2.getSession();
+			
+			if(m2.getStatus().equals(Message.AVAILABLE)) {
+				wb.acceptSeat(ses);
+			}
+			
+			else if (m2.getStatus().equals(Message.FULL)) {
+				purchase(clientId, m.getTheatres().get(rand.nextInt(
+						m.getTheatres().size())), m.getTheatres());
+			}
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+			long t1 = System.nanoTime();
+			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
+			requests.incrementAndGet();
 		}
 		
 		public void kill() {

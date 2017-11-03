@@ -6,6 +6,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -18,7 +21,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private static final long serialVersionUID = 240458129728788662L;
 	private static final int TIMEOUT = 15000;
 	
-	private  ConcurrentHashMap<String, TimeoutThread> sessions;
+	private  ConcurrentHashMap<String, Long> sessions;
 	private AtomicInteger requests;
 	
 	ReentrantLock lock = new ReentrantLock();
@@ -33,7 +36,14 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		this.wideboxDBStub = db;
 		//ver params iniciais
 		requests = new AtomicInteger();
-		this.sessions = new ConcurrentHashMap<String,TimeoutThread>();
+		this.sessions = new ConcurrentHashMap<String,Long>();
+		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		
+		Runnable task = () -> {
+		    sessions.forEach((k, v) -> sessions.remove(k, System.nanoTime()));
+		};
+		
+		executor.scheduleAtFixedRate(task, 0, 15, TimeUnit.SECONDS);
 	}
 
 	//TO-DO ver quando da full
