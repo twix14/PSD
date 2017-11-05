@@ -27,9 +27,9 @@ public class Generator {
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
 	
-	private static final String SERVER_IP = "10.101.149.60";
+	private static final String SERVER_IP = "192.168.1.82";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "10.101.149.60";
+	private static final String DB_IP = "192.168.1.82";
 	private static final int DB_PORT = 5001;
 	private static final int ratePS = 165;
 	

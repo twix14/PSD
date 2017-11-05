@@ -2,6 +2,7 @@ package server;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import utilities.Session;
 import utilities.Status;
@@ -21,7 +22,7 @@ public class Message implements Serializable {
 	
 	private String status;
 	private List<String> theatres;
-	private Status[][] seats;
+	private ConcurrentHashMap<String,Status> seats;
 	private Session sess;
 		
 	public Message(String status) {
@@ -52,11 +53,11 @@ public class Message implements Serializable {
 		this.theatres = theatres;
 	}
 
-	public Status[][] getSeats() {
+	public ConcurrentHashMap<String,Status> getSeats() {
 		return seats;
 	}
 
-	public void setSeats(Status[][] seats) {
+	public void setSeats(ConcurrentHashMap<String,Status> seats) {
 		this.seats = seats;
 	}
 
