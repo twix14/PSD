@@ -14,6 +14,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -84,15 +85,17 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			
 			curr = map.get(theatre);
 			if (curr.replace(key, oldValue, value)) {
-				System.out.println("Changed seat " + key + " from " + 
+				System.out.println("OP: " + ops.get() +" | Changed seat " + key + " from " + 
 						oldValue + " to " + value);
 				result =  true;
+				ops.decrementAndGet();
 			}
-			ops.decrementAndGet();
+			
 			if(ops.get() == 0) {
 				updateFileHash();
 				ops.set(NROPS);
-				log.delete();
+				Files.delete(log.toPath());
+				//log.delete();
 				log.createNewFile();
 			}
 			fl.close();
@@ -159,7 +162,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	         fileOut.getFD().sync();
 	         out.close();
 	         fileOut.close();
-	         System.out.printf("Serialized data is saved in Theatres.txt");
+	         System.out.println("Serialized data is saved in Theatres.txt");
 	      } catch (IOException i) {
 	         i.printStackTrace();
 	      }

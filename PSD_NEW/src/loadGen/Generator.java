@@ -27,9 +27,9 @@ public class Generator {
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
 	
-	private static final String SERVER_IP = "192.168.1.82";
+	private static final String SERVER_IP = "192.168.43.35";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "192.168.1.82";
+	private static final String DB_IP = "192.168.43.35";
 	private static final int DB_PORT = 5001;
 	private static final int ratePS = 165;
 	
@@ -54,7 +54,7 @@ public class Generator {
 		}
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
-		es = Executors.newWorkStealingPool();
+		es = Executors.newCachedThreadPool();
 		
 		System.out.println("LOAD GENERATOR STARTED");
 		while(true) {
@@ -203,7 +203,7 @@ public class Generator {
 			GenRate gr = new GenRate();
 			es.execute(app);
 			es.execute(db);
-			gr.start();
+			es.execute(gr);
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
 			app.kill();
@@ -238,7 +238,7 @@ public class Generator {
 			GenRate gr = new GenRate();
 			es.execute(app);
 			es.execute(db);
-			gr.start();
+			es.execute(gr);
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
 			app.kill();
@@ -485,7 +485,7 @@ public class Generator {
 		}
 	}
 	
-	public class GenRate extends Thread {
+	public class GenRate implements Runnable {
 		
 		private volatile boolean keepGoing = true;
 		
