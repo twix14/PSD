@@ -27,9 +27,9 @@ public class Generator {
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
 	
-	private static final String SERVER_IP = "192.168.43.35";
+	private static final String SERVER_IP = "192.168.1.229";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "192.168.43.35";
+	private static final String DB_IP = "192.168.1.229";
 	private static final int DB_PORT = 5001;
 	private static final int ratePS = 165;
 	
@@ -201,13 +201,13 @@ public class Generator {
 			es.execute(g);
 			
 			GenRate gr = new GenRate();
-			es.execute(app);
-			es.execute(db);
+			//es.execute(app);
+			//es.execute(db);
 			es.execute(gr);
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
-			app.kill();
-			db.kill();
+			//app.kill();
+			//db.kill();
 			gr.kill();
 			g.kill();
 		} catch (NumberFormatException | InterruptedException | RemoteException e) {
@@ -236,13 +236,13 @@ public class Generator {
 			}
 			
 			GenRate gr = new GenRate();
-			es.execute(app);
-			es.execute(db);
+			//es.execute(app);
+			//es.execute(db);
 			es.execute(gr);
 			
 			Thread.sleep(Integer.parseInt(duration) * 1000);
-			app.kill();
-			db.kill();
+			//app.kill();
+			//db.kill();
 			gr.kill();
 			for(int i = 0; i < numThreads-1; i++) {
 				list.get(i).kill();
@@ -250,56 +250,6 @@ public class Generator {
 		} catch (NumberFormatException | InterruptedException | RemoteException e) {
 			e.printStackTrace();
 		} 
-	}
-
-	public class AppServerRate implements Runnable {
-		
-		private IWideBox wb;
-		private volatile boolean keepGoing = true;
-		
-		public AppServerRate(IWideBox wb) {
-			this.wb = wb;
-		}
-		
-		public void run() {
-			while(keepGoing) {
-				try {
-					System.out.println("App server, serving " + wb.getRate()
-						+ " req/sec ");
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		public void kill() {
-			keepGoing = false;
-		}
-	}
-	
-	public class DbServerRate implements Runnable {
-		
-		private IWideBoxDB wbDB;
-		private volatile boolean keepGoing = true;
-		
-		public DbServerRate(IWideBoxDB wbDB) {
-			this.wbDB = wbDB;
-		}
-		
-		public void run() {
-			while(keepGoing) {
-				try {
-					System.out.println("DB server, serving " + wbDB.getRate()
-						+ " req/sec ");
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		
-		public void kill() {
-			keepGoing = false;
-		}
 	}
 	
 	public class Delay implements Runnable {
@@ -503,6 +453,56 @@ public class Generator {
 					System.out.println("Avg latency - " + lat/(res2-res1));
 					avglatency.set(0);
 					System.out.println("Load Generator rate - " + (res2-res1));
+			}
+		}
+		
+		public void kill() {
+			keepGoing = false;
+		}
+	}
+	
+	public class AppServerRate implements Runnable {
+		
+		private IWideBox wb;
+		private volatile boolean keepGoing = true;
+		
+		public AppServerRate(IWideBox wb) {
+			this.wb = wb;
+		}
+		
+		public void run() {
+			while(keepGoing) {
+				try {
+					System.out.println("App server, serving " + wb.getRate()
+						+ " req/sec ");
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		public void kill() {
+			keepGoing = false;
+		}
+	}
+	
+	public class DbServerRate implements Runnable {
+		
+		private IWideBoxDB wbDB;
+		private volatile boolean keepGoing = true;
+		
+		public DbServerRate(IWideBoxDB wbDB) {
+			this.wbDB = wbDB;
+		}
+		
+		public void run() {
+			while(keepGoing) {
+				try {
+					System.out.println("DB server, serving " + wbDB.getRate()
+						+ " req/sec ");
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		

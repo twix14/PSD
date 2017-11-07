@@ -9,7 +9,7 @@ import utilities.Status;
 
 public class WideBoxDBServer {
 	
-	private static final String MY_IP = "192.168.43.35";
+	private static final String MY_IP = "192.168.1.229";
 	
 	public static void main(String[] args) throws Exception {
 

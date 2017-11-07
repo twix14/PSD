@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.rmi.RemoteException;
@@ -26,15 +28,22 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final int NRTH = 300;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
-	private static final int NROPS = 100;
+	private static final int NROPS = 400;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;
 	private File fileHash;
 	private AtomicInteger requests;
 	private AtomicInteger ops;
+	
+	
 	private FileChannel logChannel;
 	private FileChannel TheatreChannel;
+	private ByteBuffer mByteBuffer;
+	private static final int BUFFER_SIZE = 30;
+    private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+    private FileOutputStream fos;	
+	
 	ReentrantLock lock;
 	
 	String alf = "abcdefghijklmnopqrstuvwxyz";
@@ -53,7 +62,11 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			fileHash.createNewFile();
 			if (log.createNewFile())
 			    System.out.println("Log file created!");
-			 logChannel = 
+			
+			fos = new FileOutputStream(log, true);
+			logChannel = fos.getChannel();
+			mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+			
 		} catch (IOException e) {
 			System.out.println("Log file already exists.");
 			e.printStackTrace();
@@ -61,21 +74,25 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public boolean put(String theatre, String key, Status value, Status oldValue) throws RemoteException {
-		FileOutputStream fl = null;
 		boolean result = false;
 		ConcurrentHashMap<String,Status> curr = null;
 		String linha = null;
 		try {
 			
-			fl = new FileOutputStream(log, true);
-			
-			lock.lock();
+			//lock.lock();
 			
 			linha = theatre + "," + key + "," + value + "," + oldValue;
-			fl.write(linha.getBytes());
-			fl.write(System.getProperty("line.separator").toString().getBytes());
-			fl.flush();
-			fl.getFD().sync();
+			mByteBuffer.put(linha.getBytes());
+			mByteBuffer.put(LINE_SEPARATOR.getBytes());
+			mByteBuffer.flip();
+			
+			while (mByteBuffer.hasRemaining())
+				logChannel.write(mByteBuffer);
+			
+			logChannel.force(true);
+			fos.getFD().sync();
+			
+			mByteBuffer.clear();
 			
 			curr = map.get(theatre);
 			if (curr.replace(key, oldValue, value)) {
@@ -86,21 +103,21 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			}
 			
 			if(ops.get() == 0) {
+				
 				updateFileHash();
 				ops.set(NROPS);
-				Files.delete(log.toPath());
-				
-				log.createNewFile();
+				//Files.delete(log.toPath());
+				logChannel.truncate(0);
+				//log.createNewFile();
 			}
-			fl.close();
-		} catch (IOException e) {
+		} catch (IOException | BufferOverflowException e) {
 			
 			e.printStackTrace();
 			result =  false;
 			
-		} finally {
+		} /*finally {
 			lock.unlock();
-		}
+		}*/
 		
 		requests.incrementAndGet();
 		return result;
@@ -184,7 +201,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				Thread.sleep(1000);
 				res2 = requests.get();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		return  (res2-res1);

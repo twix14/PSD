@@ -12,9 +12,9 @@ public class WideBoxServer {
 	private static final int WIDEBOXCLIENT_PORT = 5000;
 	private static final int WIDEBOXDB_PORT = 5001;
 	
-	private static final String MY_IP = "192.168.43.35";
+	private static final String MY_IP = "192.168.1.229";
 	
-	private static final String WIDEBOXDB_IP = "192.168.43.35";
+	private static final String WIDEBOXDB_IP = "192.168.1.229";
 	
 
 	public static void main(String[] args) throws Exception {
