@@ -1,23 +1,20 @@
 package db;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 import utilities.Status;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 
 
 public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
@@ -36,6 +33,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private File fileHash;
 	private AtomicInteger requests;
 	private AtomicInteger ops;
+	private FileChannel logChannel;
+	private FileChannel TheatreChannel;
 	ReentrantLock lock;
 	
 	String alf = "abcdefghijklmnopqrstuvwxyz";
@@ -52,32 +51,27 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		
 		try {
 			fileHash.createNewFile();
-			if (log.createNewFile()){
+			if (log.createNewFile())
 			    System.out.println("Log file created!");
-			  }else{
-			    System.out.println("Log file already exists.");
-			  }
+			 logChannel = 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			System.out.println("Log file already exists.");
 			e.printStackTrace();
 		}
 	}
 
 	public boolean put(String theatre, String key, Status value, Status oldValue) throws RemoteException {
-		//BufferedWriter bw = null;
-		//PrintWriter out = null;
 		FileOutputStream fl = null;
 		boolean result = false;
 		ConcurrentHashMap<String,Status> curr = null;
 		String linha = null;
 		try {
-			//bw = new BufferedWriter (new FileWriter (log, true));
+			
 			fl = new FileOutputStream(log, true);
-			//out = new PrintWriter(bw);
+			
 			lock.lock();
-			//bw.append("put");
-			//bw.newLine();
-			linha = "put(" + theatre + "," + key + "," + value + "," + oldValue + ")";
+			
+			linha = theatre + "," + key + "," + value + "," + oldValue;
 			fl.write(linha.getBytes());
 			fl.write(System.getProperty("line.separator").toString().getBytes());
 			fl.flush();
@@ -95,12 +89,12 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				updateFileHash();
 				ops.set(NROPS);
 				Files.delete(log.toPath());
-				//log.delete();
+				
 				log.createNewFile();
 			}
 			fl.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			
 			e.printStackTrace();
 			result =  false;
 			
@@ -108,7 +102,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			lock.unlock();
 		}
 		
-		//bw.close();
 		requests.incrementAndGet();
 		return result;
 			
