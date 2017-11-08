@@ -13,6 +13,9 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -38,13 +41,14 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	
 	
 	private FileChannel logChannel;
-	private FileChannel TheatreChannel;
+	
 	private ByteBuffer mByteBuffer;
 	private static final int BUFFER_SIZE = 30;
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private FileOutputStream fos;	
 	
 	ReentrantLock lock;
+	private ExecutorService es;
 	
 	String alf = "abcdefghijklmnopqrstuvwxyz";
 	char[] alphabet = alf.toUpperCase().toCharArray();
@@ -52,6 +56,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	protected WideBoxDB() throws RemoteException {
 		super();
 		loadDB();
+		
+		es = Executors.newSingleThreadExecutor();
+		
 		requests = new AtomicInteger();
 		ops = new AtomicInteger(NROPS);
 		lock = new ReentrantLock();
@@ -163,19 +170,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 	
 	private void updateFileHash() {
-		try {
-	         FileOutputStream fileOut =
-	         new FileOutputStream(fileHash);
-	         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-	         out.writeObject(map);
-	         fileOut.flush();
-	         fileOut.getFD().sync();
-	         out.close();
-	         fileOut.close();
-	         System.out.println("Serialized data is saved in Theatres.txt");
-	      } catch (IOException i) {
-	         i.printStackTrace();
-	      }
+		
 	}
 
 	@Override

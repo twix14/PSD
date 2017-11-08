@@ -27,9 +27,9 @@ public class Generator {
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
 	
-	private static final String SERVER_IP = "192.168.1.229";
+	private static final String SERVER_IP = "127.0.0.1";
 	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "192.168.1.229";
+	private static final String DB_IP = "127.0.0.1";
 	private static final int DB_PORT = 5001;
 	private static final int ratePS = 165;
 	
@@ -195,12 +195,10 @@ public class Generator {
 		try {
 				
 			Message m = wb.search();
-			AppServerRate app = new AppServerRate(wb);
-			DbServerRate db = new DbServerRate(wbDB);
 			Gen g = new Gen(wb, m, op, clientId, theatre);
 			es.execute(g);
 			
-			GenRate gr = new GenRate();
+			GenRate gr = new GenRate(Integer.parseInt(duration));
 			//es.execute(app);
 			//es.execute(db);
 			es.execute(gr);
@@ -220,8 +218,6 @@ public class Generator {
 		try {
 				
 			Message m = wb.search();
-			AppServerRate app = new AppServerRate(wb);
-			DbServerRate db = new DbServerRate(wbDB);
 			List<Gen> list = new ArrayList<>();
 			for(int i = 0; i < numThreads-1; i++) {
 				Gen g = new Gen(wb, m, op, clientId, theatre);
@@ -235,7 +231,7 @@ public class Generator {
 				es.execute(d);
 			}
 			
-			GenRate gr = new GenRate();
+			GenRate gr = new GenRate(Integer.parseInt(duration));
 			//es.execute(app);
 			//es.execute(db);
 			es.execute(gr);
@@ -438,19 +434,24 @@ public class Generator {
 	public class GenRate implements Runnable {
 		
 		private volatile boolean keepGoing = true;
+		private int duration;
+		
+		public GenRate(int duration) {
+			this.duration = duration;
+		}
 		
 		public void run() {
 			while(keepGoing) {
 					int res1 = requests.get();
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(duration * 999);
 					} catch (InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					int res2 = requests.get();
 					long lat = avglatency.get();
-					System.out.println("Avg latency - " + lat/(res2-res1));
+					System.out.println("Avg latency - " + lat/((res2-res1)+1));
 					avglatency.set(0);
 					System.out.println("Load Generator rate - " + (res2-res1));
 			}
