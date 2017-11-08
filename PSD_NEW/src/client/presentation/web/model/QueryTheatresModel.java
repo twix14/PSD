@@ -1,6 +1,7 @@
 package client.presentation.web.model;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import utilities.Status;
 
@@ -20,7 +21,11 @@ public class QueryTheatresModel extends Model {
 	private String result;
 	private boolean hasTheatres;
 	private List<String> theatres;
-	private Status[][] seats;
+	private ConcurrentHashMap<String, Status> seats;
+	
+	private String alf = "abcdefghijklmnopqrstuvwxyz";
+	
+	private char[] alphabet = alf.toUpperCase().toCharArray();
 	
 	
 	public void setMovie(String movie) {
@@ -56,10 +61,20 @@ public class QueryTheatresModel extends Model {
 	}
 	
 	public Status[][] getSeats() {
-		return seats;
+		Status[][] result = new Status[26][40];
+		int coluna = 0;
+		
+		for(int i = 0; i < result.length; i++)
+			for(int j = 0; j < result[i].length; j++) {
+				char linha = alphabet[i];
+				coluna = j+1;
+				result[i][j] = seats.get(linha + Integer.toString(coluna));
+				
+			}
+		return result;
 	}
 
-	public void setSeats(Status[][] seats) {
+	public void setSeats(ConcurrentHashMap<String, Status> seats) {
 		this.seats = seats;
 	}
 

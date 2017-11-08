@@ -12,6 +12,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -19,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import utilities.Status;
 
 
@@ -31,18 +33,17 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final int NRTH = 300;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
-	private static final int NROPS = 400;
+	private static final int NROPS = 2000;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;
-	private File fileHash;
+	
 	private AtomicInteger requests;
 	private AtomicInteger ops;
 	
-	
+	private File fileHash;
 	private FileChannel logChannel;
 	
-	private ByteBuffer mByteBuffer;
 	private static final int BUFFER_SIZE = 30;
     private static final String LINE_SEPARATOR = System.getProperty("line.separator");
     private FileOutputStream fos;	
@@ -72,7 +73,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			
 			fos = new FileOutputStream(log, true);
 			logChannel = fos.getChannel();
-			mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 			
 		} catch (IOException e) {
 			System.out.println("Log file already exists.");
@@ -87,6 +87,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		try {
 			
 			//lock.lock();
+			ByteBuffer mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 			
 			linha = theatre + "," + key + "," + value + "," + oldValue;
 			mByteBuffer.put(linha.getBytes());
@@ -170,7 +171,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 	
 	private void updateFileHash() {
-		
+		ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> copy = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>(map);
+		es.execute(new WorkingThread(copy, requests.get()));
 	}
 
 	@Override

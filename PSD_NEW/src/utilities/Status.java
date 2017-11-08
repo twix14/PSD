@@ -3,7 +3,6 @@ package utilities;
 public enum Status {
 	FREE, RESERVED, OCCUPIED;
 	
-	
 
     public String getString() {
         return this.name();
@@ -13,8 +12,12 @@ public enum Status {
         return this == RESERVED;
     }
 
-      public boolean getOccupied() {
-        return this == OCCUPIED;
-      }
+    public boolean getOccupied() {
+    	return this == OCCUPIED;
+    }
+    
+    public boolean getFree() {
+    	return this == FREE;
+    }
 }
   
