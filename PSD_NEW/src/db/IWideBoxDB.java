@@ -22,6 +22,8 @@ public interface IWideBoxDB extends Remote {
 
 	public void crash() throws RemoteException;
 	
+	public void reset() throws RemoteException;
+	
 	public int getRate() throws RemoteException;
 	
 	public void fullTheatre(String theatre) throws RemoteException;

@@ -28,6 +28,8 @@ public interface IWideBox extends Remote {
 
 	public void crash() throws RemoteException;
 	
+	public void reset() throws RemoteException;
+	
 	public int getRate() throws RemoteException;
 	
 }
