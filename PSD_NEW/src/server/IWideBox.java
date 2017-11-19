@@ -2,6 +2,7 @@ package server;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import utilities.Session;
 
@@ -30,6 +31,8 @@ public interface IWideBox extends Remote {
 	
 	public void reset() throws RemoteException;
 	
-	public int getRate() throws RemoteException;
+	public int getRate(int duration) throws RemoteException;
+	
+	public void startRate() throws RemoteException;
 	
 }

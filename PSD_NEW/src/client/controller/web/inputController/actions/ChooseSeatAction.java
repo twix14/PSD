@@ -18,7 +18,7 @@ public class ChooseSeatAction extends Action {
 
 			QueryTheatresModel model = createHelper(request);
 			request.setAttribute("model", model);
-			IWideBox widebox = FrontController.getWideBoxServer();
+			IWideBox widebox = FrontController.getServer();
 			Message mens;
 			
 			if (validInput(model)) {

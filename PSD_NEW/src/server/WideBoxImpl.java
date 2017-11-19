@@ -30,6 +30,8 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	char[] alphabet = alf.toUpperCase().toCharArray();
 
 	IWideBoxDB wideboxDBStub;
+	
+	private int res1;
 
 	public WideBoxImpl(IWideBoxDB db) throws RemoteException {
 		this.wideboxDBStub = db;
@@ -208,19 +210,16 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	public void reset() throws RemoteException {
 		down = false;
 	}
+	
+	public void startRate() throws RemoteException {
+		res1 = requests.get();
+	}
 
-	public int getRate() throws RemoteException{
+	public int getRate(int duration) throws RemoteException{
 		if(!down) {
-			int res1= 0;
 			int res2 = 0;
-			try {
-				res1 = requests.get();
-				Thread.sleep(1000);
-				res2 = requests.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return  (res2-res1);
+			res2 = requests.get();
+			return  ((res2-res1)/duration);
 		} else 
 			throw new RemoteException("App Server down!");
 	}

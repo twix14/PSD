@@ -18,7 +18,7 @@ public class SeatReplyAction extends Action{
 
 			private static final String REGEX = "[A-Z][1-40]";
 
-			IWideBox widebox = FrontController.getWideBoxServer();
+			IWideBox widebox = FrontController.getServer();
 			
 			public void process(HttpServletRequest request, HttpServletResponse response) 
 					throws ServletException, IOException {

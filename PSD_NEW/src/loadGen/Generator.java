@@ -15,9 +15,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import db.IWideBoxDB;
+import loadBal.ILoadBalancer;
 import server.IWideBox;
 import server.Message;
 import utilities.Session;
+import zooKeeper.IZKClient;
 
 public class Generator {
 
@@ -27,10 +29,6 @@ public class Generator {
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
 
-	private static final String SERVER_IP = "127.0.0.1";
-	private static final int SERVER_PORT = 5000;
-	private static final String DB_IP = "127.0.0.1";
-	private static final int DB_PORT = 5001;
 	private static final int ratePS = 165;
 
 	private static final int NRCL = 100000;
@@ -42,14 +40,28 @@ public class Generator {
 	public Generator(String[] args) {
 		@SuppressWarnings("resource")
 		Scanner sc = new Scanner(System.in);
+		//podem ficar para ver o codigo para testar quantos pedidos estao a servir?
 		IWideBox wb = null;
 		IWideBoxDB wbDB = null;
+
+		ILoadBalancer lb = null;
 		ExecutorService es= null;
+
+		//args[0] - loadBalancer IP
+		//args[1] - loadBalancer Port
+		//args[2] - zooKeeper IP
+		//args[3] - zooKeeper Port
+
 		try {
+			Registry reg = LocateRegistry.getRegistry(args[0], 
+					Integer.parseInt(args[1]));
+			lb = (ILoadBalancer) reg.lookup("LoadBalancer");
+			/**
 			Registry registry = LocateRegistry.getRegistry(SERVER_IP, SERVER_PORT);
 			wb = (IWideBox) registry.lookup("WideBoxServer");
 			Registry registry2 = LocateRegistry.getRegistry(DB_IP, DB_PORT);
 			wbDB = (IWideBoxDB) registry2.lookup("WideBoxDBServer");
+			 */
 		} catch(RemoteException | NotBoundException e) {
 			e.printStackTrace();
 		}
@@ -59,6 +71,12 @@ public class Generator {
 
 		System.out.println("LOAD GENERATOR STARTED");
 		while(true) {
+
+			try {
+				Thread.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			System.out.println("Comando do tipo: ORIGIN,TARGET,OPERATION,RATE,DURATION");
 			System.out.println("Comando----->");
 			String command = sc.nextLine();
@@ -69,13 +87,13 @@ public class Generator {
 					!split[1].equals("r") && split[2].equals("q")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 1, split[4], Integer.parseInt(split[0]), split[1], es);
+					starOpWithoutRate(lb, args, 1, split[4], Integer.parseInt(split[0]), split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 1, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
+					starOp(lb, 1, split[4], args, (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
 				}
 			}
 
@@ -84,13 +102,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 2, split[4], Integer.parseInt(split[0]), null, es);
+					starOpWithoutRate(lb, args, 2, split[4], Integer.parseInt(split[0]), null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 2, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
+					starOp(lb, 2, split[4], args, (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
 				}
 			}
 
@@ -99,13 +117,13 @@ public class Generator {
 					!split[1].equals("r") && split[2].equals("q")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 3, split[4], 0, split[1], es);
+					starOpWithoutRate(lb, args, 3, split[4], 0, split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 3, split[4], (int) nThreads + 1 ,  lag, 0, split[1], es);
+					starOp(lb, 3, split[4], args, (int) nThreads + 1 ,  lag, 0, split[1], es);
 				}
 
 			}
@@ -115,13 +133,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("q")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 4, split[4], 0, null, es);
+					starOpWithoutRate(lb, args, 4, split[4], 0, null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 4, split[4], (int) nThreads + 1 ,  lag, 0, null, es);
+					starOp(lb, 4, split[4], args, (int) nThreads + 1 ,  lag, 0, null, es);
 				}
 
 			}
@@ -131,13 +149,13 @@ public class Generator {
 					!split[1].equals("r") && split[2].equals("p")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 5, split[4], Integer.parseInt(split[0]), split[1], es);
+					starOpWithoutRate(lb, args, 5, split[4], Integer.parseInt(split[0]), split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 5, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
+					starOp(lb, 5, split[4], args, (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), split[1], es);
 				}
 
 			}
@@ -147,13 +165,13 @@ public class Generator {
 					!split[1].equals("r") && split[2].equals("p")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 6, split[4], 0, split[1], es);
+					starOpWithoutRate(lb, args, 6, split[4], 0, split[1], es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 6, split[4], (int) nThreads + 1 ,  lag, 0, split[1], es);
+					starOp(lb, 6, split[4], args, (int) nThreads + 1 ,  lag, 0, split[1], es);
 				}
 			}
 
@@ -162,13 +180,13 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 
 				if(split[3].equals(" ")) {
-					starOpWithoutRate(wb, wbDB, 7, split[4], Integer.parseInt(split[0]), null, es);
+					starOpWithoutRate(lb, args, 7, split[4], Integer.parseInt(split[0]), null, es);
 				} else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 7, split[4], (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
+					starOp(lb, 7, split[4], args, (int) nThreads + 1 ,  lag, Integer.parseInt(split[0]), null, es);
 				}
 			}
 
@@ -177,26 +195,27 @@ public class Generator {
 					split[1].equals("r") && split[2].equals("p")) {
 
 				if(split[3].equals(" ")) { 
-					starOpWithoutRate(wb, wbDB, 8, split[4], 0, null, es);
+					starOpWithoutRate(lb, args, 8, split[4], 0, null, es);
 
 				}else {
 					int n = Integer.parseInt(split[3]);
 					double nThreads = n/ratePS;
 					//em media 500, disparar 1 thread para medir o valor medio
 					double lag = Math.abs(nThreads - ((int) nThreads + 1));
-					starOp(wb, wbDB, 8, split[4], (int) nThreads + 1 ,  lag, 0, null, es);
+					starOp(lb, 8, split[4], args, (int) nThreads + 1 ,  lag, 0, null, es);
 				}
 			}
 		}
 
 	}
 
-	public void starOpWithoutRate(IWideBox wb, IWideBoxDB wbDB, int op, String duration, int clientId, String theatre, 
-			ExecutorService es) {
+	public void starOpWithoutRate(ILoadBalancer lb, String[] args,
+			int op, String duration, int clientId, String theatre, ExecutorService es) {
 		try {
+			new AllAppServersRate(duration, args).start();
 
-			Message m = wb.search();
-			Gen g = new Gen(wb, m, op, clientId, theatre);
+			Message m = lb.requestSearch();
+			Gen g = new Gen(lb, m, op, clientId, theatre);
 			es.execute(g);
 
 			GenRate gr = new GenRate(Integer.parseInt(duration));
@@ -213,19 +232,20 @@ public class Generator {
 		} 
 	}
 
-	public void starOp(IWideBox wb, IWideBoxDB wbDB, int op, String duration, 
+	public void starOp(ILoadBalancer lb, int op, String duration,  String[] args,
 			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
+			new AllAppServersRate(duration, args).start();
 
-			Message m = wb.search();
+			Message m = lb.requestSearch();
 			List<Gen> list = new ArrayList<>();
 			for(int i = 0; i < numThreads-1; i++) {
-				Gen g = new Gen(wb, m, op, clientId, theatre);
+				Gen g = new Gen(lb, m, op, clientId, theatre);
 				list.add(g);
 				es.execute(g);
 			}
 			if(!(lag == 0)) {
-				Gen last = new Gen(wb, m, op, clientId, theatre);
+				Gen last = new Gen(lb, m, op, clientId, theatre);
 				es.execute(last);
 				Delay d = new Delay(last, (int) lag * 1000);
 				es.execute(d);
@@ -269,16 +289,16 @@ public class Generator {
 	}
 
 	public class Gen implements Runnable {
-
-		private IWideBox wb;
+		private ILoadBalancer lb;
 		private volatile boolean keepGoing = true;
 		private Message m;
 		private int op;
 		private int clientId;
 		private String theatre;
 
-		public Gen(IWideBox wb, Message m, int op, int clientId, String theatre) {
-			this.wb = wb;
+		public Gen(ILoadBalancer lb, Message m, int op, 
+				int clientId, String theatre) {
+			this.lb = lb;
 			this.m = m;
 			this.op = op;
 			this.clientId = clientId;
@@ -295,7 +315,7 @@ public class Generator {
 			//SSQ
 			case 1:
 				while(keepGoing) {
-					query(clientId, theatre, m2);
+					query(clientId, theatre, m2, false);
 				}
 				break;
 
@@ -305,7 +325,7 @@ public class Generator {
 					theatre = m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
 
-					query(clientId, theatre, m2);
+					query(clientId, theatre, m2, true);
 				}
 				break;
 
@@ -313,7 +333,7 @@ public class Generator {
 			case 3:
 				while(keepGoing) {
 					clientId = rand.nextInt(NRCL);
-					query(clientId, theatre, m2);
+					query(clientId, theatre, m2, false);
 				}
 				break;
 
@@ -324,14 +344,14 @@ public class Generator {
 							m.getTheatres().size()));
 					clientId = rand.nextInt(NRCL);
 
-					query(clientId, theatre, m2);
+					query(clientId, theatre, m2, true);
 				}
 				break;
 
 				//SSP	
 			case 5:
 				while(keepGoing) {
-					purch(clientId, theatre, m2, ses, rand);
+					purch(clientId, theatre, m2, ses, rand, false);
 				}
 				break;
 
@@ -339,7 +359,7 @@ public class Generator {
 			case 6:
 				while(keepGoing) {
 					clientId = rand.nextInt(NRCL);
-					purch(clientId, theatre, m2, ses, rand);
+					purch(clientId, theatre, m2, ses, rand, false);
 				}
 				break;
 
@@ -348,7 +368,7 @@ public class Generator {
 				while(keepGoing) {
 					theatre= m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
-					purch(clientId, theatre, m2, ses, rand);
+					purch(clientId, theatre, m2, ses, rand, true);
 				}
 				break;
 
@@ -358,7 +378,7 @@ public class Generator {
 					theatre= m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size()));
 					clientId = rand.nextInt(NRCL);
-					purch(clientId, theatre, m2, ses, rand);
+					purch(clientId, theatre, m2, ses, rand, true);
 				}
 				break;
 			}
@@ -371,29 +391,40 @@ public class Generator {
 			int value = 0;
 			Random rand = new Random();
 
-			m2 = wb.seatsAvailable(client, theatre);
+			m2 = lb.requestSeatAvailable(client, theatre);
 			ses = m2.getSession();
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
-				wb.acceptSeat(ses);
+				m2.getServer().acceptSeat(ses);
 			}
 
 			else if (m2.getStatus().equals(Message.FULL)) {
 				value = rand.nextInt(listTheatres.size()+1);
 				purchase(client, listTheatres.get(value), listTheatres);
 			}
+
+			else if(m2.getStatus().equals(Message.BUSY)) {
+				System.out.println("The system is busy!");
+			}
 		}
 
-		private void query (int clientId, String theatre, Message m2) {
+		private void query (int clientId, String theatre, Message m2, boolean search) {
 			long t0 = System.nanoTime();
 			try {
-				m2 = wb.seatsAvailable(clientId,theatre);
+				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
+				m2 = lb.requestSeatAvailable(clientId,theatre);
 
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
-					wb.cancelSeat(m2.getSession());
+					//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
+					//TO THIS REQUEST!
+					m2.getServer().cancelSeat(m2.getSession());
 				}
 
 				else if(m2.getStatus().equals(Message.FULL)) {
+				}
+
+				else if(m2.getStatus().equals(Message.BUSY)) {
+					System.out.println("The system is busy!");
 				}
 			} catch (RemoteException e) {
 				e.printStackTrace();
@@ -403,19 +434,27 @@ public class Generator {
 			requests.incrementAndGet();
 		}
 
-		private void purch(int clientId, String theatre, Message m2, Session ses, Random rand) {
+		private void purch(int clientId, String theatre, Message m2, 
+				Session ses, Random rand, boolean search) {
 			long t0 = System.nanoTime();
 			try {
-				m2 = wb.seatsAvailable(clientId, theatre);
+				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
+				m2 = lb.requestSeatAvailable(clientId, theatre);
 				ses = m2.getSession();
 
+				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
+				//TO THIS REQUEST!
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
-					wb.acceptSeat(ses);
+					m2.getServer().acceptSeat(ses);
 				}
 
 				else if (m2.getStatus().equals(Message.FULL)) {
 					purchase(clientId, m.getTheatres().get(rand.nextInt(
 							m.getTheatres().size())), m.getTheatres());
+				} 
+
+				else if(m2.getStatus().equals(Message.BUSY)) {
+					System.out.println("The system is busy!");
 				}
 			} catch (RemoteException e) {
 				e.printStackTrace();
@@ -455,28 +494,87 @@ public class Generator {
 		}
 	}
 
-	public class AppServerRate implements Runnable {
+	public class GetRateServer extends Thread{
 
-		private IWideBox wb;
-		private volatile boolean keepGoing = true;
+		private IWideBox server;
+		private int duration;
+		private int id;
 
-		public AppServerRate(IWideBox wb) {
-			this.wb = wb;
+		public GetRateServer(int id, IWideBox server, int duration) {
+			this.server = server;
+			this.duration = duration;
+			this.id = id;
 		}
 
 		public void run() {
-			while(keepGoing) {
+
+			try {
+				server.startRate();
+				Thread.sleep(duration * 1000);
+				int rate = 0;
 				try {
-					System.out.println("App server, serving " + wb.getRate()
-					+ " req/sec ");
+					rate = server.getRate(duration);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
+				System.out.println("App server-" + id + ", serving " + rate
+						+ " req/sec ");
+
+			} catch (InterruptedException | RemoteException e) {
+				e.printStackTrace();
 			}
+
 		}
 
-		public void kill() {
-			keepGoing = false;
+	}
+
+	public class AllAppServersRate extends Thread {
+
+		private IZKClient zooKeeper;
+		private String duration;
+
+		public AllAppServersRate(String duration, String[] args) {
+			this.duration = duration;
+			Registry registry;
+			try {
+				registry = LocateRegistry.getRegistry(args[2], 
+						Integer.parseInt(args[3]));
+				zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
+			} catch (NumberFormatException | NotBoundException | RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
+		}
+
+		public void run() {
+			List<String> ips = null;
+			try {
+				ips = zooKeeper.getAllAppServerNodes();
+			} catch (RemoteException e1) {
+				System.err.println("Problems connecting to ZooKeeper");
+				e1.printStackTrace();
+			}
+			int id = 1;
+			for(String ip: ips) {
+				String[] split = ip.split(":");
+
+				try {
+					IWideBox server = null;
+					Registry registry = LocateRegistry.getRegistry(split[0],
+							Integer.parseInt(split[1]));
+					server = (IWideBox) registry.lookup("WideBoxServer");
+					new GetRateServer(id, server, Integer.parseInt(this.duration)).start();
+				} catch (NotBoundException e) {
+					System.err.println("Problem connecting with AppServer"
+							+ "with Ip:Port-" + ip);
+					e.printStackTrace();
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+				id++;
+			}
+
 		}
 	}
 

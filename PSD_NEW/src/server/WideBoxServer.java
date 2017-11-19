@@ -6,6 +6,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 import db.IWideBoxDB;
+import zooKeeper.IZKClient;
 
 public class WideBoxServer {
 
@@ -28,10 +29,26 @@ public class WideBoxServer {
 
 		IWideBoxDB wideboxDBStub = null;
 		IWideBox widebox = null;
+		IZKClient zooKeeper = null;
+		
+		//args[0] appServer IP
+		//args[1] appServer port
+		//args[2] dbServer IP, change this for multiple db servers, probably ZooKeeper
+		//args[3] dbServer Port
+		//args[4] zooKeeper IP
+		//args[5] zooKeeper Port
+		
+		System.setProperty("java.rmi.server.hostname", args[0]);
 
 		try {
-			System.setProperty("java.rmi.server.hostname", MY_IP);
-			Registry registry = LocateRegistry.getRegistry(WIDEBOXDB_IP, WIDEBOXDB_PORT);
+			Registry registry = LocateRegistry.getRegistry(args[4], 
+					Integer.parseInt(args[5]));
+			zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
+			System.out.println("Connected to ZooKeeper");
+			
+			
+			registry = LocateRegistry.getRegistry(args[2], 
+					Integer.parseInt(args[3]));
 			wideboxDBStub = (IWideBoxDB) registry.lookup("WideBoxDBServer");
 			System.out.println("Connected to DB");
 		} catch (RemoteException e) {
@@ -39,13 +56,14 @@ public class WideBoxServer {
 			System.err.println("Error in getting registry");
 			 
 		} catch (NotBoundException e) {
-			System.err.println("Error in getting the WideBoxDB");
+			System.err.println("Error in getting the WideBoxDB or ZKClient");
 		}
 
 		try {
 			widebox = new WideBoxImpl(wideboxDBStub);
-			Registry registry = LocateRegistry.createRegistry(WIDEBOXCLIENT_PORT);
+			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("WideBoxServer", widebox);
+			zooKeeper.createAppServerNode(args[0], args[1]);
 		} catch (RemoteException e) {
 			
 			System.err.println("Error in creating the WideBoxServer registry");

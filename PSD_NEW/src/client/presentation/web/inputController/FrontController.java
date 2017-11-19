@@ -18,6 +18,7 @@ import client.controller.web.inputController.actions.ChooseSeatAction;
 import client.controller.web.inputController.actions.QueryTheatreAction;
 import client.controller.web.inputController.actions.SeatReplyAction;
 import client.controller.web.inputController.actions.UnknownAction;
+import loadBal.ILoadBalancer;
 import server.IWideBox;
 
 
@@ -65,14 +66,16 @@ import server.IWideBox;
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
-	private static final String SERVER_PORT = "5000";
-	private static final String SERVER_IP = "10.101.148.84";
+	private static final String LOADBALANCER_PORT = "5002";
+	private static final String LOADBALANCER_IP = "127.0.0.1";
 	
 	private static AtomicInteger serialClient;
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
-	private static IWideBox wb;
+	private static ILoadBalancer lb;
+	private static IWideBox server;
+	
 	/**
 	 * Maps http actions to the objects that are going to handle them
 	 */
@@ -114,8 +117,16 @@ public class FrontController extends HttpServlet {
 		doGet(request, response);
 	}
 	
-	public static IWideBox getWideBoxServer() {
-		return wb;
+	public static ILoadBalancer getLoadBalancer() {
+		return lb;
+	}
+	
+	public static void setServer(IWideBox server2) {
+		server = server2;
+	}
+	
+	public static IWideBox getServer() {
+		return server;
 	}
 	
 	public InitialContext getInitialContex() {
@@ -140,9 +151,8 @@ public class FrontController extends HttpServlet {
 		serialClient = new AtomicInteger();
 		try {
 			context = new InitialContext();
-			Registry registry = LocateRegistry.getRegistry(SERVER_IP, Integer.parseInt(SERVER_PORT));
-			wb = (IWideBox) registry.lookup("WideBoxServer");
-			//wb = (IWideBox) registry.lookup("WideBoxServer");
+			Registry registry = LocateRegistry.getRegistry(LOADBALANCER_IP, Integer.parseInt(LOADBALANCER_PORT));
+			lb = (ILoadBalancer) registry.lookup("LoadBalancer");
 		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
 		//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );
 		} catch (Exception e) {

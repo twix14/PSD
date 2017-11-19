@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import client.presentation.web.inputController.FrontController;
 import client.presentation.web.model.QueryTheatresModel;
+import loadBal.ILoadBalancer;
 import server.IWideBox;
 import server.Message;
 
@@ -20,14 +21,15 @@ public class QueryTheatreAction extends Action {
 
 		QueryTheatresModel model = new QueryTheatresModel();
 		request.setAttribute("model", model);
-		IWideBox widebox = FrontController.getWideBoxServer();
+		ILoadBalancer lb = FrontController.getLoadBalancer();
 		Message mens;
 		
 		try {
-			mens = widebox.search();
+			mens = lb.requestSearch();
 				if (mens !=null && mens.getStatus().equals(Message.THEATRES)) {
 					model.setTheatres(mens.getTheatres());
 					model.setHasTheatres(true);
+					FrontController.setServer(mens.getServer());
 					
 					//Tem de vir o client id
 					//model.setClientId(Integer.toString(mens.getSession().getId()));
