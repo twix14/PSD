@@ -30,7 +30,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final int NRTH = 300;
+	private static final int NRTH = 1500;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
 	private static final int NROPS = 2000;
@@ -56,9 +56,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	String alf = "abcdefghijklmnopqrstuvwxyz";
 	char[] alphabet = alf.toUpperCase().toCharArray();
 
-	protected WideBoxDB() throws RemoteException {
+	protected WideBoxDB(int last, int numOfTheatresPerDB) throws RemoteException {
 		super();
-		loadDB();
+		loadDB(last, numOfTheatresPerDB);
 		down = false;
 
 		es = Executors.newSingleThreadExecutor();
@@ -116,7 +116,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 				if(ops.get() == 0) {
 
-					updateFileHash();
+					//updateFileHash();
 					ops.set(NROPS);
 					//Files.delete(log.toPath());
 					logChannel.truncate(0);
@@ -165,10 +165,11 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			throw new RemoteException("Db Server down!");
 	}
 
-	private void loadDB () {
+	private void loadDB (int last, int numOfTheatresPerDB) {
 		this.map = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>(NRTH);
 		ConcurrentHashMap<String,Status> curr; 
-		for(int k = 1; k <= NRTH; k++) {
+		int o = last-numOfTheatresPerDB+1;
+		for(int k = o; k <= last; k++) {
 			curr = new ConcurrentHashMap<String,Status>(NRCL * NRRW);
 			for(int i = 0; i < NRRW; i++)
 				for (int j = 1; j <= NRCL; j++) {

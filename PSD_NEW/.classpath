@@ -13,5 +13,8 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="Z:/git/psd/PSD_NEW/slf4j-api-1.7.25.jar"/>
+	<classpathentry kind="lib" path="Z:/git/psd/PSD_NEW/slf4j-simple-1.7.25.jar"/>
+	<classpathentry kind="lib" path="Z:/git/psd/PSD_NEW/zookeeper-3.4.11.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

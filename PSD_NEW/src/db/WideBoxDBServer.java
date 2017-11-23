@@ -1,25 +1,43 @@
 package db;
 
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
 import java.util.TreeMap;
 
 import utilities.Status;
+import zooKeeper.IZKClient;
 
 public class WideBoxDBServer {
-	
-	private static final String MY_IP = "127.0.0.1";
-	
+		
 	public static void main(String[] args) throws Exception {
 
 		IWideBoxDB db = null;
+		IZKClient zooKeeper = null;
+		
+		//args[0] DBServer IP
+		//args[1] DBServer port
+		//args[2] zooKeeper IP
+		//args[3] zooKeeper Port
+		//args[4] numberOfTheatres
+		//args[5] numberDBs
 		
 		try {
-			System.setProperty("java.rmi.server.hostname", MY_IP);
-			db = new WideBoxDB();
-			Registry registry = LocateRegistry.createRegistry(5001);
-			registry.rebind("WideBoxDBServer", db);
+			System.setProperty("java.rmi.server.hostname", args[0]);
+			
+			Registry registry = LocateRegistry.getRegistry(args[2], 
+					Integer.parseInt(args[3]));
+			zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
+			System.out.println("Connected to ZooKeeper");
+			
+			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+			db = new WideBoxDB(last, (Integer.parseInt(args[4])/Integer.parseInt(args[5])));
+			
+			Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
+			registry2.rebind("WideBoxDBServer", db);
+			
 			System.out.println("DB loaded\n");
 			System.out.println("Commands:");
 			System.out.println("-->'print db n-theatre' command to print status of a theatre");
@@ -28,8 +46,18 @@ public class WideBoxDBServer {
 			System.out.println("-->'put n-theatre n-seat newValue oldValue'");
 			
 			//
+			
+		} catch (RemoteException e) {
+			System.err.println("Error in getting registry");
+			e.printStackTrace();
+			 
+		} catch (NotBoundException e) {
+			System.err.println("Error in getting the WideBoxDB or ZKClient");
+			e.printStackTrace();
+		
 		} catch (Exception e) {
 			System.err.println("WideBoxDBServer - Error trying  to start the server!");
+			e.printStackTrace();
 		}
 		
 		Scanner sc = new Scanner(System.in);

@@ -1,7 +1,12 @@
 package server;
 
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -12,6 +17,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import db.IWideBoxDB;
 import utilities.Session;
 import utilities.Status;
+import zooKeeper.IZKClient;
 
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
@@ -29,18 +35,47 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	char[] alphabet = alf.toUpperCase().toCharArray();
 
-	IWideBoxDB wideboxDBStub;
+	//List with starting servers
+	private List<IWideBoxDB> servers;
+	
+	private IZKClient zooKeeper;
 	
 	private int res1;
 
-	public WideBoxImpl(IWideBoxDB db) throws RemoteException {
-		this.wideboxDBStub = db;
+	public WideBoxImpl(IZKClient zooKeeper) throws RemoteException {
+		this.zooKeeper = zooKeeper;
 		//ver params iniciais
 		requests = new AtomicInteger();
 		this.sessions = new ConcurrentHashMap<String,Long>();
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 		down = false;
+		
+		//get all ips and remote appserver objects
+		List<String> ips = this.zooKeeper.getAllDBNodes();
+		servers = new LinkedList<>();
 
+		/*
+		 * The Round Robin algorithm is best for clusters 
+		 * consisting of servers with identical specs
+		 */
+
+		for(String ip: ips) {
+			String[] split = ip.split(":");
+			Registry registry = LocateRegistry.getRegistry(split[0],
+					Integer.parseInt(split[1]));
+			IWideBoxDB server = null;
+			try {
+				server = (IWideBoxDB) registry.lookup("WideBoxDBServer");
+				servers.add(server);
+			} catch (NotBoundException e) {
+				System.err.println("Problem connecting with DBServer"
+						+ "with Ip:Port-" + ip);
+				e.printStackTrace();
+			}
+			System.out.println("Connected to DBServer with Ip:Port-"
+					+ ip);
+		}
+		
 		Runnable task = () -> {
 			sessions.forEach((k, v) -> {
 				try {
