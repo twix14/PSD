@@ -32,7 +32,7 @@ public class Generator {
 	private static final int ratePS = 165;
 
 	private static final int NRCL = 100000;
-
+	
 	public static void main(String[] args) {
 		new Generator(args);
 	}
@@ -41,8 +41,6 @@ public class Generator {
 		@SuppressWarnings("resource")
 		Scanner sc = new Scanner(System.in);
 		//podem ficar para ver o codigo para testar quantos pedidos estao a servir?
-		IWideBox wb = null;
-		IWideBoxDB wbDB = null;
 
 		ILoadBalancer lb = null;
 		ExecutorService es= null;
@@ -56,8 +54,8 @@ public class Generator {
 			Registry reg = LocateRegistry.getRegistry(args[0], 
 					Integer.parseInt(args[1]));
 			lb = (ILoadBalancer) reg.lookup("LoadBalancer");
-			/**
-			Registry registry = LocateRegistry.getRegistry(SERVER_IP, SERVER_PORT);
+			
+			/**Registry registry = LocateRegistry.getRegistry("127.0.0.1", 5004);
 			wb = (IWideBox) registry.lookup("WideBoxServer");
 			Registry registry2 = LocateRegistry.getRegistry(DB_IP, DB_PORT);
 			wbDB = (IWideBoxDB) registry2.lookup("WideBoxDBServer");
@@ -216,12 +214,14 @@ public class Generator {
 
 			Message m = lb.requestSearch();
 			Gen g = new Gen(lb, m, op, clientId, theatre);
-			es.execute(g);
+			//es.execute(g);
+			g.start();
 
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 			//es.execute(app);
 			//es.execute(db);
-			es.execute(gr);
+			//es.execute(gr);
+			gr.start();
 
 			Thread.sleep(Integer.parseInt(duration) * 1000);
 			//app.kill();
@@ -242,19 +242,23 @@ public class Generator {
 			for(int i = 0; i < numThreads-1; i++) {
 				Gen g = new Gen(lb, m, op, clientId, theatre);
 				list.add(g);
-				es.execute(g);
+				g.start();
+				//es.execute(g);
 			}
 			if(!(lag == 0)) {
 				Gen last = new Gen(lb, m, op, clientId, theatre);
-				es.execute(last);
+				//es.execute(last);
+				last.start();
 				Delay d = new Delay(last, (int) lag * 1000);
-				es.execute(d);
+				//es.execute(d);
+				d.start();
 			}
 
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 			//es.execute(app);
 			//es.execute(db);
-			es.execute(gr);
+			gr.start();
+			//es.execute(gr);
 
 			Thread.sleep(Integer.parseInt(duration) * 1000);
 			//app.kill();
@@ -267,7 +271,7 @@ public class Generator {
 		} 
 	}
 
-	public class Delay implements Runnable {
+	public class Delay extends Thread {
 
 		private Gen last;
 		private int duration;
@@ -288,13 +292,14 @@ public class Generator {
 
 	}
 
-	public class Gen implements Runnable {
+	public class Gen extends Thread {
 		private ILoadBalancer lb;
 		private volatile boolean keepGoing = true;
 		private Message m;
 		private int op;
 		private int clientId;
 		private String theatre;
+		private int i;
 
 		public Gen(ILoadBalancer lb, Message m, int op, 
 				int clientId, String theatre) {
@@ -310,11 +315,13 @@ public class Generator {
 			//Random rand2 = new Random()
 			Message m2 = null;
 			Session ses = null;
+			i = 0;
 			switch(op) {
-
+				
 			//SSQ
 			case 1:
 				while(keepGoing) {
+					
 					query(clientId, theatre, m2, false);
 				}
 				break;
@@ -333,7 +340,7 @@ public class Generator {
 			case 3:
 				while(keepGoing) {
 					clientId = rand.nextInt(NRCL);
-					query(clientId, theatre, m2, false);
+					query(clientId, theatre, m2, false);i++;
 				}
 				break;
 
@@ -413,11 +420,12 @@ public class Generator {
 			try {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
 				m2 = lb.requestSeatAvailable(clientId,theatre);
-
+				
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
 					//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 					//TO THIS REQUEST!
 					m2.getServer().cancelSeat(m2.getSession());
+					
 				}
 
 				else if(m2.getStatus().equals(Message.FULL)) {
@@ -469,7 +477,7 @@ public class Generator {
 		}
 	}
 
-	public class GenRate implements Runnable {
+	public class GenRate extends Thread {
 
 		private int duration;
 

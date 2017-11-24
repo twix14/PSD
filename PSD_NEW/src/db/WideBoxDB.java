@@ -1,6 +1,7 @@
 package db;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
@@ -20,6 +21,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.MapSerializer;
+
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import utilities.Status;
 
@@ -32,7 +37,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final long serialVersionUID = 1L;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
-	private static final int NROPS = 2000;
+	private static final int NROPS = 3000;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;
@@ -120,8 +125,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				}
 
 				if(ops.get() == 0) {
-
-					//updateFileHash();
+					System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+					updateFileHash();
 					ops.set(NROPS);
 					//Files.delete(log.toPath());
 					logChannel.truncate(0);
@@ -145,7 +150,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	public void printStatus(String theatre) throws RemoteException {
 		if(!down) {
 			ConcurrentHashMap<String,Status> curr = map.get(theatre);
-			System.out.println(curr.toString());
+			System.out.println(curr.toString());		       
 		} else 
 			throw new RemoteException("Db Server down!");
 	}
