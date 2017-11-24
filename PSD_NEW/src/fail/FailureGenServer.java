@@ -1,24 +1,23 @@
-package loadBal;
+package fail;
 
-import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 import zooKeeper.IZKClient;
 
-public class LoadBalancerServer {
+public class FailureGenServer {
 	
 	public static void main(String[] args) throws Exception {
-		new LoadBalancerServer(args);
+		new FailureGenServer(args);
 	}
 	
-	public LoadBalancerServer(String[] args) {
+	public FailureGenServer(String[] args) {
 		
 		System.out.println("Starting the load balancer...");
 		
-		//args[0] - Load Balancer IP
-		//args[1] - Load Balancer Port
+		//args[0] - failureGenerator IP
+		//args[1] - failureGenerator Port
 		//args[2] - ZooKeeper IP
 		//args[3] - ZooKeeper Port
 		
@@ -28,13 +27,11 @@ public class LoadBalancerServer {
 					Integer.parseInt(args[3]));
 			IZKClient zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
 			System.out.println("Connected to ZooKeeper");
-			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
-			zooKeeper.createLBNode(args[0], args[1], pid[0]);
 			
 			System.setProperty("java.rmi.server.hostname", args[0]);
-			ILoadBalancer loadbalancer = new LoadBalancerImpl(zooKeeper);
+			FailureGen fg = new FailureGen(zooKeeper);
 			registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
-			registry.rebind("LoadBalancer", loadbalancer);
+			registry.rebind("FailureGenerator", fg);
 		} catch (RemoteException e) {
 			System.err.println("Error in getting registry");
 		} catch (Exception e) {

@@ -1,5 +1,6 @@
 package db;
 
+import java.lang.management.ManagementFactory;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -31,8 +32,9 @@ public class WideBoxDBServer {
 					Integer.parseInt(args[3]));
 			zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
 			System.out.println("Connected to ZooKeeper");
-			
-			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[4]), Integer.parseInt(args[5]));
+			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
+			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[4]), Integer.parseInt(args[5]),
+					pid[0]);
 			db = new WideBoxDB(last, (Integer.parseInt(args[4])/Integer.parseInt(args[5])));
 			
 			Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));

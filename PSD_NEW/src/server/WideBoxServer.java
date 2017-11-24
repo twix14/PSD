@@ -1,5 +1,6 @@
 package server;
 
+import java.lang.management.ManagementFactory;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -38,7 +39,8 @@ public class WideBoxServer {
 			widebox = new WideBoxImpl(zooKeeper);
 			registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("WideBoxServer", widebox);
-			zooKeeper.createAppServerNode(args[0], args[1]);
+			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
+			zooKeeper.createAppServerNode(args[0], args[1], pid[0]);
 			
 		} catch (RemoteException e) {
 			

@@ -67,7 +67,7 @@ public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final String LOADBALANCER_PORT = "5002";
-	private static final String LOADBALANCER_IP = "127.0.0.1";
+	private static final String LOADBALANCER_IP = "10.101.149.55";
 	
 	private static AtomicInteger serialClient;
 	

@@ -1,6 +1,7 @@
 package zooKeeper;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -30,29 +31,29 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 	//GROUP MEMBERSHIP
 
 	@Override
-	public int createAppServerNode(String ip, String port) throws RemoteException {
+	public int createAppServerNode(String ip, String port, String pid) throws RemoteException {
 		try {
 			String root = "/appServers";
 			//root node exists 
 			Stat stat = zk.exists(root, false);
-			String ipPort = ip + ":" + port; 
+			String ipPort = ip + ":" + port + ":" + pid; 
 			if(stat != null) {
 				//creates child node that represents him
 				
 				String node = zk.create(root + "/server", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 			} else {
 				//create group membership node
 				String node = zk.create(root, new byte[0], Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT);
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 				//creates child node that represents him
 				node = zk.create(root + "/server", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 			}
 		} catch (KeeperException e) {
 			e.printStackTrace();
@@ -88,8 +89,64 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 		return result;
 	}
 	
+	public int createLBNode(String ip, String port, String pid) {
+		try {
+			String root = "/loadBalancers";
+			//root node exists 
+			Stat stat = zk.exists(root, false);
+			String ipPort = ip + ":" + port + ":" + pid; 
+			if(stat != null) {
+				//creates child node that represents him
+				
+				String node = zk.create(root + "/lb", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT_SEQUENTIAL);
+				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
+				System.out.println("ZooKeeper create node " + node);
+			} else {
+				//create group membership node
+				String node = zk.create(root, new byte[0], Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT);
+				System.out.println("ZooKeeper created node " + node);
+				//creates child node that represents him
+				node = zk.create(root + "/lb", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
+						CreateMode.PERSISTENT_SEQUENTIAL);
+				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
+				System.out.println("ZooKeeper created node " + node);
+			}
+		} catch (KeeperException e) {
+			e.printStackTrace();
+			return -1;
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+			return -1;
+		} 
+		
+		
+		return 0;
+	}
+	
+	public List<String> getAllLBNodes() throws RemoteException {
+		String root = "/loadBalancers";
+		List<String> result = new ArrayList<>();
+		try {
+			List<String> children = zk.getChildren(root, true);
+
+			for(String s : children) {
+				String ip = new String(zk.getData(root + "/" + s, false, null));
+				result.add(ip);
+				System.out.println("LoadBalancerServer with IP:Port-" + ip + " is on the group!");
+			}
+		} catch (KeeperException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		return result;
+	}
+	
 	@Override
-	public int createDBNode(String ip, String port, int numberOfTheatres, int numberDBs) throws RemoteException {
+	public int createDBNode(String ip, String port, int numberOfTheatres, int numberDBs, String pid) throws RemoteException {
 		int numOfTheatresPerDB = numberOfTheatres/numberDBs;
 		int res = 0;
 		
@@ -97,7 +154,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			String root = "/DBServers";
 			//root node exists 
 			Stat stat = zk.exists(root, false);
-			String ipPort = ip + ":" + port + ":" + numOfTheatresPerDB; 
+			String ipPort = ip + ":" + port + ":" + numOfTheatresPerDB + ":" + pid; 
 			if(stat != null) {
 				//creates child node that represents him
 				
@@ -106,22 +163,22 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 				List<String> children = zk.getChildren(root, true);
 				String[] split = new String(zk.getData(root + "/" + children.get(children.size()-1), false, null)).split(":");
 				
-				String ipDB = ip + ":" + port + ":" + (Integer.parseInt(split[2]) + numOfTheatresPerDB);
+				String ipDB = ip + ":" + port + ":" + (Integer.parseInt(split[2]) + numOfTheatresPerDB) + ":" + pid;
 				String node = zk.create(root + "/server", ipDB.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 				res = Integer.parseInt(split[2])+ numOfTheatresPerDB;
 			} else {
 				//create group membership node
 				String node = zk.create(root, new byte[0], Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT);
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 				//creates child node that represents him
 				node = zk.create(root + "/server", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
-				System.out.println("ZooKeeper create node " + node);
+				System.out.println("ZooKeeper created node " + node);
 				res = numOfTheatresPerDB;
 			}
 		} catch (KeeperException e) {
