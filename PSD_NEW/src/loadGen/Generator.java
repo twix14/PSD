@@ -583,8 +583,8 @@ public class Generator {
 		private IWideBoxDB wbDB;
 		private volatile boolean keepGoing = true;
 
-		public DbServerRate(IWideBoxDB wbDB) {
-			this.wbDB = wbDB;
+		public DbServerRate(String duration, String[] args) {
+			
 		}
 
 		public void run() {

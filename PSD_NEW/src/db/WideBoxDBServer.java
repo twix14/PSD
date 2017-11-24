@@ -37,7 +37,6 @@ public class WideBoxDBServer {
 			
 			Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry2.rebind("WideBoxDBServer", db);
-			
 			System.out.println("DB loaded\n");
 			System.out.println("Commands:");
 			System.out.println("-->'print db n-theatre' command to print status of a theatre");

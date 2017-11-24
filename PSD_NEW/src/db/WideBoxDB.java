@@ -30,7 +30,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static final int NRTH = 1500;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
 	private static final int NROPS = 2000;
@@ -55,12 +54,18 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	String alf = "abcdefghijklmnopqrstuvwxyz";
 	char[] alphabet = alf.toUpperCase().toCharArray();
+	
+	private int[] range;
 
 	protected WideBoxDB(int last, int numOfTheatresPerDB) throws RemoteException {
 		super();
 		loadDB(last, numOfTheatresPerDB);
 		down = false;
-
+		
+		range = new int[2];
+		range[0] = last-numOfTheatresPerDB+1;
+		range[1] = last;
+		
 		es = Executors.newSingleThreadExecutor();
 
 		requests = new AtomicInteger();
@@ -148,7 +153,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	public List<String> listTheatres() throws RemoteException {
 		if(!down) {
 			List<String> result = new ArrayList<String>();
-			for (int j = 1; j <= NRTH; j++) 
+			for (int j = range[0]; j <= range[1]; j++) 
 				result.add(String.valueOf(j));
 
 			requests.incrementAndGet();
@@ -166,7 +171,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	private void loadDB (int last, int numOfTheatresPerDB) {
-		this.map = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>(NRTH);
+		System.out.println("My Theatres: " + (last-numOfTheatresPerDB+1) + " to " + last);
+		this.map = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>(numOfTheatresPerDB);
 		ConcurrentHashMap<String,Status> curr; 
 		int o = last-numOfTheatresPerDB+1;
 		for(int k = o; k <= last; k++) {
@@ -195,7 +201,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	@Override
 	public String get(String theatre) throws RemoteException {
+		try {
 		if(!down) {
+			System.out.println("Theatre: " + theatre);
 			ConcurrentHashMap<String,Status> curr = map.get(theatre);
 			return curr.search(1, (k, v) -> {
 				if (v.equals(Status.FREE))
@@ -204,6 +212,11 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			});
 		} else 
 			throw new RemoteException("Db Server down!");
+		} catch(Exception e) {
+			System.out.println(theatre);
+			e.printStackTrace();
+			throw new RemoteException();
+		}
 	}
 
 	public void crash() throws RemoteException {

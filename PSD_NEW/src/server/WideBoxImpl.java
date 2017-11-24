@@ -13,6 +13,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.Collections;
 
 import db.IWideBoxDB;
 import utilities.Session;
@@ -39,6 +40,10 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private List<IWideBoxDB> servers;
 	
 	private IZKClient zooKeeper;
+	private int div;
+	private int max;
+	
+	List<String> theatresList = new LinkedList<String>();
 	
 	private int res1;
 
@@ -52,6 +57,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		//get all ips and remote appserver objects
 		List<String> ips = this.zooKeeper.getAllDBNodes();
+		Collections.reverse(ips);
 		servers = new LinkedList<>();
 
 		/*
@@ -75,6 +81,9 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			System.out.println("Connected to DBServer with Ip:Port-"
 					+ ip);
 		}
+		String[] split2 = ips.get(0).split(":");
+		div = Integer.parseInt(split2[2]);
+		max = Integer.parseInt(split2[2]) * ips.size();
 		
 		Runnable task = () -> {
 			sessions.forEach((k, v) -> {
@@ -82,6 +91,16 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 					long time = System.currentTimeMillis();
 					if(v <= time) {
 						String[] split = k.split("-");
+						IWideBoxDB wideboxDBStub = null;
+						
+						if((Integer.parseInt(split[1]) % div )== 0) {
+							wideboxDBStub = servers.get((Integer.parseInt(split[1]) / div)-1);
+						} if(Integer.parseInt(split[1]) != max) {
+							wideboxDBStub = servers.get((int) (Integer.parseInt(split[1]) / div));
+						} else {
+							wideboxDBStub = servers.get(servers.size()-1);
+						}
+						wideboxDBStub = servers.get((int) (Integer.parseInt(split[1]) / div));
 						wideboxDBStub.put(split[1], split[2], Status.FREE, Status.RESERVED);
 						sessions.remove(k);
 						System.out.println("Timeout expired for seat " + split[2] + " in theatre " + split[1]);
@@ -95,10 +114,17 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	@Override
 	public Message search() throws RemoteException {
+		Message m = null;
 		if(!down) {
-			Message m = new Message(Message.THEATRES);
-			m.setTheatres(wideboxDBStub.listTheatres());
 			requests.incrementAndGet();
+			m = new Message(Message.THEATRES);
+			if (theatresList.isEmpty()) {
+				
+				for(IWideBoxDB s : servers) {
+					theatresList.addAll(s.listTheatres());
+				}			
+			}
+			m.setTheatres(theatresList);
 			return m;
 		} else
 			throw new RemoteException("App Server down!");
@@ -110,7 +136,17 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			String seat = null;
 			boolean result = false;
 			Message response = null;
-
+			
+			IWideBoxDB wideboxDBStub = null;
+			if((Integer.parseInt(theatre) % div )== 0) {
+				wideboxDBStub = servers.get((Integer.parseInt(theatre) / div)-1);
+			}else if(Integer.parseInt(theatre) != max) {	
+				System.out.println("Dispatching theatre"+ theatre 
+						+" to dbserver - " + (int) (Integer.parseInt(theatre) / div));
+				wideboxDBStub = servers.get((int) (Integer.parseInt(theatre) / div));
+			} else {
+				wideboxDBStub = servers.get(servers.size()-1);
+			}
 			seat = wideboxDBStub.get(theatre);
 			if(seat != null) {
 				requests.incrementAndGet();
@@ -147,7 +183,17 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			boolean result = false;
 			Long exists = null;
 			exists = sessions.remove(Integer.toString(ses.getId()) + "-" + ses.getTheatre() + "-" + ses.getSeat());
-
+			IWideBoxDB wideboxDBStub = null;
+			
+			if((Integer.parseInt(ses.getTheatre()) % div )== 0) {
+				wideboxDBStub = servers.get((Integer.parseInt(ses.getTheatre()) / div)-1);
+			}else if(Integer.parseInt(ses.getTheatre()) != max) {
+				System.out.println("Dispatching theatre"+ ses.getTheatre() 
+					+" to dbserver - " + (int) (Integer.parseInt(ses.getTheatre()) / div));
+				wideboxDBStub = servers.get((int) (Integer.parseInt(ses.getTheatre()) / div));
+			} else {
+				wideboxDBStub = servers.get(servers.size()-1);
+			}
 			if (exists != null) {
 				result = wideboxDBStub.put(ses.getTheatre(), ses.getSeat(), Status.OCCUPIED, Status.RESERVED);
 
@@ -170,7 +216,17 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			Long t = sessions.get(Integer.toString(ses.getId()) + "-" + ses.getTheatre() + "-" + ses.getSeat());
 			Message m = null;
 			boolean res2 = false;
-
+			IWideBoxDB wideboxDBStub = null;
+			
+			if((Integer.parseInt(ses.getTheatre()) % div )== 0) {
+				wideboxDBStub = servers.get((Integer.parseInt(ses.getTheatre()) / div)-1);
+			}else if(Integer.parseInt(ses.getTheatre()) != max) {
+				System.out.println("Dispatching theatre"+ ses.getTheatre() 
+					+" to dbserver - " + (int) (Integer.parseInt(ses.getTheatre()) / div));
+				wideboxDBStub = servers.get((int) (Integer.parseInt(ses.getTheatre()) / div));
+			} else {
+				wideboxDBStub = servers.get(servers.size()-1);
+			}
 			lock.lock();
 			try {
 
@@ -222,6 +278,17 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			Long exists = null;
 			exists = sessions.remove(Integer.toString(ses.getId()) + "-" + ses.getTheatre() + "-" + ses.getSeat());
 
+			IWideBoxDB wideboxDBStub = null;
+			
+			if((Integer.parseInt(ses.getTheatre()) % div )== 0) {
+				wideboxDBStub = servers.get((Integer.parseInt(ses.getTheatre()) / div)-1);
+			}else if(Integer.parseInt(ses.getTheatre()) != max) {
+				System.out.println("Dispatching theatre"+ ses.getTheatre() 
+					+" to dbserver - " + (int) (Integer.parseInt(ses.getTheatre()) / div));
+				wideboxDBStub = servers.get((int) (Integer.parseInt(ses.getTheatre()) / div));
+			} else {
+				wideboxDBStub = servers.get(servers.size()-1);
+			}
 			if (exists != null) {
 				result = wideboxDBStub.put(ses.getTheatre(), ses.getSeat(), Status.FREE, Status.RESERVED);
 
