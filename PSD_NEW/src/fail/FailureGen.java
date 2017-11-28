@@ -36,7 +36,7 @@ public class FailureGen extends UnicastRemoteObject implements IFailureGen {
 			for(int i = 0; i < appServers.size(); i++) {
 				String[] split = appServers.get(i).split(":");
 				if(split[0].equals(ip) && split[1].equals(String.valueOf(port))) {
-					String cmd = "powershell.exe kill " +  split[3];
+					String cmd = "powershell.exe kill " +  split[2];
 					try {
 							Runtime.getRuntime().exec(cmd);
 							System.out.println("AppServer killed");
