@@ -68,7 +68,7 @@ public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private static final String LOADBALANCER_PORT = "5002";
-	private static final String LOADBALANCER_IP = "10.101.149.55";
+	private static final String LOADBALANCER_IP = "10.101.148.59";
 	
 	private static AtomicInteger serialClient;
 	public static Cache cache;
@@ -145,7 +145,7 @@ public class FrontController extends HttpServlet {
 	 */
 	@Override
 	public void init() {
-		Cache cache = new Cache();
+		cache = new Cache();
 		actionHandlers = new HashMap<>();
 		actionHandlers.put("unknownAction", "java:module/UnknownAction");
 		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");

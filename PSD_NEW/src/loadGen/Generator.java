@@ -429,8 +429,6 @@ public class Generator {
 			try {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
 				m2 = lb.requestSeatAvailable(clientId,theatre);
-				long t2 = System.nanoTime();
-				System.out.println("Latency at the loadBalancer the time - " + TimeUnit.NANOSECONDS.toMillis(t2-t0));
 				IWideBox server = cache.get(m2.getServer());
 				
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
@@ -450,7 +448,6 @@ public class Generator {
 				e.printStackTrace();
 			}
 			long t1 = System.nanoTime();
-			System.out.println("Latency at the time - " + TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			requests.incrementAndGet();
 		}
@@ -482,7 +479,6 @@ public class Generator {
 				e.printStackTrace();
 			}
 			long t1 = System.nanoTime();
-			System.out.println("Latency at the time - " + TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			requests.incrementAndGet();
 		}
@@ -510,7 +506,6 @@ public class Generator {
 			}
 			int res2 = requests.get();
 			long lat = avglatency.get();
-			System.out.println("Lat = " + lat);
 			System.out.println("Avg latency - " + lat/((res2-res1)+1));
 			avglatency.set(0);
 			System.out.println("Load Generator rate - " + (res2-res1));

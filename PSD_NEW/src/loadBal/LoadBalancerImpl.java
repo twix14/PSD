@@ -26,7 +26,6 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 	private List<IWideBox> servers;
 	private List<String> serversClient;
 	//Lock for round robin
-	ReentrantLock lock = new ReentrantLock();
 	int roundRobin;
 
 	//Maximum operations with the current available app servers
@@ -80,19 +79,14 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			messages.add(new Message("Request"));
 
 		//change next server to be assigned
-		lock.lock();
-		try {
-			roundRobin++;
-		} finally {
-			lock.unlock();
-		}
+		roundRobin++;
+		
+		int serv = roundRobin % servers.size();
 
 		//dispatch request to next server using round robin!
-		IWideBox server = servers.get(roundRobin % servers.size());
+		IWideBox server = servers.get(serv);
 		Message result = server.search();
-
-		//IN THIS CASE DON'T RETURN THE SERVER WHO HANDLE, BUT STILL COUNT IT
-		//HAS A OPERATION
+		result.setServer(serversClient.get(serv));
 
 		//is it important to get the exact same message that you placed?????
 		//to be tested!!!!
@@ -113,12 +107,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			messages.add(new Message("Request"));
 
 		//change next server to be assigned
-		lock.lock();
-		try {
-			roundRobin++;
-		} finally {
-			lock.unlock();
-		}
+		roundRobin++;
 		
 		int serv = roundRobin % servers.size();
 		
