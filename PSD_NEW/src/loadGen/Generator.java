@@ -18,6 +18,7 @@ import db.IWideBoxDB;
 import loadBal.ILoadBalancer;
 import server.IWideBox;
 import server.Message;
+import utilities.Cache;
 import utilities.Session;
 import zooKeeper.IZKClient;
 
@@ -28,6 +29,8 @@ public class Generator {
 
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
+	
+	public Cache cache;
 
 	private static final int ratePS = 165;
 
@@ -66,6 +69,8 @@ public class Generator {
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
 		es = Executors.newCachedThreadPool();
+		
+		cache = new Cache();
 
 		System.out.println("LOAD GENERATOR STARTED");
 		while(true) {
@@ -211,13 +216,14 @@ public class Generator {
 			int op, String duration, int clientId, String theatre, ExecutorService es) {
 		try {
 			new AllAppServersRate(duration, args).start();
+			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = lb.requestSearch();
 			Gen g = new Gen(lb, m, op, clientId, theatre);
 			//es.execute(g);
 			g.start();
 
-			GenRate gr = new GenRate(Integer.parseInt(duration));
+			
 			//es.execute(app);
 			//es.execute(db);
 			//es.execute(gr);
@@ -236,6 +242,7 @@ public class Generator {
 			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
 			new AllAppServersRate(duration, args).start();
+			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = lb.requestSearch();
 			List<Gen> list = new ArrayList<>();
@@ -254,7 +261,7 @@ public class Generator {
 				d.start();
 			}
 
-			GenRate gr = new GenRate(Integer.parseInt(duration));
+			
 			//es.execute(app);
 			//es.execute(db);
 			gr.start();
@@ -400,9 +407,11 @@ public class Generator {
 
 			m2 = lb.requestSeatAvailable(client, theatre);
 			ses = m2.getSession();
+			
+			IWideBox server = cache.get(m2.getServer());
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
-				m2.getServer().acceptSeat(ses);
+				server.acceptSeat(ses);
 			}
 
 			else if (m2.getStatus().equals(Message.FULL)) {
@@ -420,11 +429,14 @@ public class Generator {
 			try {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
 				m2 = lb.requestSeatAvailable(clientId,theatre);
+				long t2 = System.nanoTime();
+				System.out.println("Latency at the loadBalancer the time - " + TimeUnit.NANOSECONDS.toMillis(t2-t0));
+				IWideBox server = cache.get(m2.getServer());
 				
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
 					//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 					//TO THIS REQUEST!
-					m2.getServer().cancelSeat(m2.getSession());
+					server.cancelSeat(m2.getSession());
 					
 				}
 
@@ -438,6 +450,7 @@ public class Generator {
 				e.printStackTrace();
 			}
 			long t1 = System.nanoTime();
+			System.out.println("Latency at the time - " + TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			requests.incrementAndGet();
 		}
@@ -449,11 +462,12 @@ public class Generator {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
 				m2 = lb.requestSeatAvailable(clientId, theatre);
 				ses = m2.getSession();
+				IWideBox server = cache.get(m2.getServer());
 
 				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 				//TO THIS REQUEST!
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
-					m2.getServer().acceptSeat(ses);
+					server.acceptSeat(ses);
 				}
 
 				else if (m2.getStatus().equals(Message.FULL)) {
@@ -468,6 +482,7 @@ public class Generator {
 				e.printStackTrace();
 			}
 			long t1 = System.nanoTime();
+			System.out.println("Latency at the time - " + TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
 			requests.incrementAndGet();
 		}
@@ -495,6 +510,7 @@ public class Generator {
 			}
 			int res2 = requests.get();
 			long lat = avglatency.get();
+			System.out.println("Lat = " + lat);
 			System.out.println("Avg latency - " + lat/((res2-res1)+1));
 			avglatency.set(0);
 			System.out.println("Load Generator rate - " + (res2-res1));

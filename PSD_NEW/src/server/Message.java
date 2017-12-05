@@ -24,7 +24,7 @@ public class Message implements Serializable {
 	private List<String> theatres;
 	private ConcurrentHashMap<String,Status> seats;
 	private Session sess;
-	private IWideBox server;
+	private String server;
 		
 	public Message(String status) {
 		this.status = status;
@@ -62,11 +62,11 @@ public class Message implements Serializable {
 		this.seats = seats;
 	}
 
-	public IWideBox getServer() {
+	public String getServer() {
 		return server;
 	}
 
-	public void setServer(IWideBox server) {
+	public void setServer(String server) {
 		this.server = server;
 	}
 

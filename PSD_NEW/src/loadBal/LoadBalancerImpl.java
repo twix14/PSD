@@ -24,6 +24,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 	//List with starting servers
 	private List<IWideBox> servers;
+	private List<String> serversClient;
 	//Lock for round robin
 	ReentrantLock lock = new ReentrantLock();
 	int roundRobin;
@@ -39,6 +40,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		//get all ips and remote appserver objects
 		List<String> ips = this.zooKeeper.getAllAppServerNodes();
 		servers = new LinkedList<>();
+		serversClient = new LinkedList<>();
 		roundRobin = 0;
 		
 		/*
@@ -54,6 +56,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			try {
 				server = (IWideBox) registry.lookup("WideBoxServer");
 				servers.add(server);
+				serversClient.add(ip);
 			} catch (NotBoundException e) {
 				System.err.println("Problem connecting with AppServer"
 						+ "with Ip:Port-" + ip);
@@ -117,12 +120,14 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			lock.unlock();
 		}
 		
+		int serv = roundRobin % servers.size();
+		
 		//dispatch request to next server using round robin!
-		IWideBox server = servers.get(roundRobin % servers.size());
+		IWideBox server = servers.get(serv);
 		Message result = server.seatsAvailable(clientId, theatre);
 		
 		//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
-		result.setServer(server);
+		result.setServer(serversClient.get(serv));
 		
 		//is it important to get the exact same message that you placed?????
 		//to be tested!!!!

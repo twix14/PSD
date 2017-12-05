@@ -20,6 +20,7 @@ import client.controller.web.inputController.actions.SeatReplyAction;
 import client.controller.web.inputController.actions.UnknownAction;
 import loadBal.ILoadBalancer;
 import server.IWideBox;
+import utilities.Cache;
 
 
 /**
@@ -70,6 +71,7 @@ public class FrontController extends HttpServlet {
 	private static final String LOADBALANCER_IP = "10.101.149.55";
 	
 	private static AtomicInteger serialClient;
+	public static Cache cache;
 	
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
@@ -121,8 +123,8 @@ public class FrontController extends HttpServlet {
 		return lb;
 	}
 	
-	public static void setServer(IWideBox server2) {
-		server = server2;
+	public static void setServer(String server2) {
+		server = cache.get(server2);
 	}
 	
 	public static IWideBox getServer() {
@@ -143,6 +145,7 @@ public class FrontController extends HttpServlet {
 	 */
 	@Override
 	public void init() {
+		Cache cache = new Cache();
 		actionHandlers = new HashMap<>();
 		actionHandlers.put("unknownAction", "java:module/UnknownAction");
 		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");
