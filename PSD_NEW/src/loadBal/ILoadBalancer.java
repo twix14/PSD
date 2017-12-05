@@ -11,4 +11,6 @@ public interface ILoadBalancer extends Remote {
 	
 	public Message requestSeatAvailable(int clientId, String theatre) throws RemoteException;
 	
+	public void addServer(String server);
+	
 }

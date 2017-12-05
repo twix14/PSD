@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
 import server.IWideBox;
 import server.Message;
@@ -46,7 +45,6 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		 * The Round Robin algorithm is best for clusters 
 		 * consisting of servers with identical specs
 		 */
-
 		for(String ip: ips) {
 			String[] split = ip.split(":");
 			Registry registry = LocateRegistry.getRegistry(split[0],
@@ -85,7 +83,16 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 		//dispatch request to next server using round robin!
 		IWideBox server = servers.get(serv);
-		Message result = server.search();
+		Message result = null;
+		try {
+			result = server.search();
+		} catch (RemoteException e) {
+			//server offline
+			servers.remove(serv);
+			serversClient.remove(serv);
+			return requestSearch();
+		}
+		
 		result.setServer(serversClient.get(serv));
 
 		//is it important to get the exact same message that you placed?????
@@ -113,7 +120,15 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		
 		//dispatch request to next server using round robin!
 		IWideBox server = servers.get(serv);
-		Message result = server.seatsAvailable(clientId, theatre);
+		Message result = null;
+		try {
+			result = server.seatsAvailable(clientId, theatre);
+		} catch (RemoteException e) {
+			//server offline
+			servers.remove(serv);
+			serversClient.remove(serv);
+			return requestSearch();
+		}
 		
 		//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
 		result.setServer(serversClient.get(serv));
@@ -127,5 +142,25 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		}
 
 		return result;
+	}
+
+	@Override
+	public void addServer(String server2) {
+		if(!serversClient.contains(server2)) {
+			String[] split = server2.split(":");
+			try {
+				Registry registry = LocateRegistry.getRegistry(split[0],
+					Integer.parseInt(split[1]));
+				IWideBox server = (IWideBox) registry.lookup("WideBoxServer");
+				servers.add(server);
+				serversClient.add(server2);
+			} catch (Exception e) {
+				System.err.println("Problem connecting with AppServer"
+						+ "with Ip:Port-" + server2);
+				e.printStackTrace();
+			}
+			System.out.println("Connected to AppServer with Ip:Port-"
+					+ server2);
+		}
 	}
 }
