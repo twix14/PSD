@@ -1,6 +1,7 @@
 package client.controller.web.inputController.actions;
 
 import java.io.IOException;
+import java.rmi.ConnectException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +26,14 @@ public class QueryTheatreAction extends Action {
 		Message mens;
 		
 		try {
-			mens = lb.requestSearch();
+			
+			try{
+				mens = lb.requestSearch();
+			} catch (ConnectException e){
+				FrontController.removeLoadBalancer();
+				lb = FrontController.getLoadBalancer();
+				mens = lb.requestSearch();
+			}
 				if (mens !=null && mens.getStatus().equals(Message.THEATRES)) {
 					model.setTheatres(mens.getTheatres());
 					model.setHasTheatres(true);

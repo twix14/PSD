@@ -1,5 +1,6 @@
 package loadGen;
 
+import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -10,6 +11,7 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -20,6 +22,7 @@ import server.IWideBox;
 import server.Message;
 import utilities.Cache;
 import utilities.Session;
+import utilities.Status;
 import zooKeeper.IZKClient;
 
 public class Generator {
@@ -29,13 +32,16 @@ public class Generator {
 
 	public static AtomicInteger requests;
 	public static AtomicLong avglatency;
-	
+
 	public Cache cache;
+
+	public List<ILoadBalancer> lbs;
+	public IZKClient zk;
 
 	private static final int ratePS = 165;
 
 	private static final int NRCL = 100000;
-	
+
 	public static void main(String[] args) {
 		new Generator(args);
 	}
@@ -45,31 +51,62 @@ public class Generator {
 		Scanner sc = new Scanner(System.in);
 		//podem ficar para ver o codigo para testar quantos pedidos estao a servir?
 
-		ILoadBalancer lb = null;
-		ExecutorService es= null;
+		ScheduledExecutorService es= null;
 
-		//args[0] - loadBalancer IP
-		//args[1] - loadBalancer Port
-		//args[2] - zooKeeper IP
-		//args[3] - zooKeeper Port
+		//args[0] - zooKeeper IP
+		//args[1] - zooKeeper Port
 
+		Registry registry;
 		try {
-			Registry reg = LocateRegistry.getRegistry(args[0], 
+			registry = LocateRegistry.getRegistry(args[0], 
 					Integer.parseInt(args[1]));
-			lb = (ILoadBalancer) reg.lookup("LoadBalancer");
-			
-			/**Registry registry = LocateRegistry.getRegistry("127.0.0.1", 5004);
-			wb = (IWideBox) registry.lookup("WideBoxServer");
-			Registry registry2 = LocateRegistry.getRegistry(DB_IP, DB_PORT);
-			wbDB = (IWideBoxDB) registry2.lookup("WideBoxDBServer");
-			 */
-		} catch(RemoteException | NotBoundException e) {
+			zk = (IZKClient) registry.lookup("ZooKeeperServer");
+
+			List<String> lbsZK = zk.getAllLBNodes();
+			for(String s : lbsZK){
+				String[] split = s.split(":");
+				registry = LocateRegistry.getRegistry(split[0],
+						Integer.parseInt(split[1]));
+				ILoadBalancer server = null;
+				server = (ILoadBalancer) registry.lookup("LoadBalancer");
+				lbs.add(server);
+			}
+		} catch (NumberFormatException | NotBoundException | RemoteException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+		ILoadBalancer lb = lbs.get(0);
+
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
-		es = Executors.newCachedThreadPool();
-		
+		es = Executors.newScheduledThreadPool(1);
+
+		Runnable task = () -> {
+			try {
+				List<String> lbsList = zk.getAllLBNodes();
+				//add the loadbalancer that recovered!
+				if(lbsList.size() == 2 && lbs.size() == 1){
+					String backup = lbsList.get(1);
+					String[] split = backup.split(":");
+					Registry registry2 = LocateRegistry.getRegistry(split[0],
+							Integer.parseInt(split[1]));
+					ILoadBalancer server = null;
+					try {
+						server = (ILoadBalancer) registry2.lookup("LoadBalancer");
+					} catch (NotBoundException e) {
+						e.printStackTrace();
+					}
+					lbs.add(server);
+				}
+
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		};
+
+		es.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+
 		cache = new Cache();
 
 		System.out.println("LOAD GENERATOR STARTED");
@@ -218,12 +255,21 @@ public class Generator {
 			new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
-			Message m = lb.requestSearch();
+			Message m = null;
+			try{
+				m = lb.requestSearch();
+			} catch (ConnectException e) {
+				System.err.println("Retrying connection...");
+				lbs.remove(0);
+				lb = lbs.get(0);
+				m = lb.requestSearch();
+			}
+			
 			Gen g = new Gen(lb, m, op, clientId, theatre);
 			//es.execute(g);
 			g.start();
 
-			
+
 			//es.execute(app);
 			//es.execute(db);
 			//es.execute(gr);
@@ -244,7 +290,16 @@ public class Generator {
 			new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
-			Message m = lb.requestSearch();
+			Message m = null;
+			try{
+				m = lb.requestSearch();
+			} catch (ConnectException e) {
+				System.err.println("Retrying connection...");
+				lbs.remove(0);
+				lb = lbs.get(0);
+				m = lb.requestSearch();
+			}
+
 			List<Gen> list = new ArrayList<>();
 			for(int i = 0; i < numThreads-1; i++) {
 				Gen g = new Gen(lb, m, op, clientId, theatre);
@@ -261,7 +316,7 @@ public class Generator {
 				d.start();
 			}
 
-			
+
 			//es.execute(app);
 			//es.execute(db);
 			gr.start();
@@ -324,11 +379,11 @@ public class Generator {
 			Session ses = null;
 			i = 0;
 			switch(op) {
-				
+
 			//SSQ
 			case 1:
 				while(keepGoing) {
-					
+
 					query(clientId, theatre, m2, false);
 				}
 				break;
@@ -404,10 +459,18 @@ public class Generator {
 			Session ses = null;
 			int value = 0;
 			Random rand = new Random();
-
-			m2 = lb.requestSeatAvailable(client, theatre);
-			ses = m2.getSession();
 			
+			try{
+				m2 = lb.requestSeatAvailable(client, theatre);
+			} catch (ConnectException e) {
+				System.err.println("Retrying connection...");
+				lbs.remove(0);
+				lb = lbs.get(0);
+				m2 = lb.requestSeatAvailable(client, theatre);
+			}
+			
+			ses = m2.getSession();
+
 			IWideBox server = cache.get(m2.getServer());
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
@@ -428,14 +491,22 @@ public class Generator {
 			long t0 = System.nanoTime();
 			try {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
-				m2 = lb.requestSeatAvailable(clientId,theatre);
-				IWideBox server = cache.get(m2.getServer());
+				try{
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				} catch (ConnectException e) {
+					System.err.println("Retrying connection...");
+					lbs.remove(0);
+					lb = lbs.get(0);
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				}
 				
+				IWideBox server = cache.get(m2.getServer());
+
 				if(m2.getStatus().equals(Message.AVAILABLE)) {
 					//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 					//TO THIS REQUEST!
 					server.cancelSeat(m2.getSession());
-					
+
 				}
 
 				else if(m2.getStatus().equals(Message.FULL)) {
@@ -457,7 +528,15 @@ public class Generator {
 			long t0 = System.nanoTime();
 			try {
 				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
-				m2 = lb.requestSeatAvailable(clientId, theatre);
+				try{
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				} catch (ConnectException e) {
+					System.err.println("Retrying connection...");
+					lbs.remove(0);
+					lb = lbs.get(0);
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				}
+				
 				ses = m2.getSession();
 				IWideBox server = cache.get(m2.getServer());
 
@@ -603,7 +682,7 @@ public class Generator {
 		private volatile boolean keepGoing = true;
 
 		public DbServerRate(String duration, String[] args) {
-			
+
 		}
 
 		public void run() {

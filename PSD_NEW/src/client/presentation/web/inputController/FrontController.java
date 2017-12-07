@@ -1,9 +1,11 @@
 package client.presentation.web.inputController;
 
 import java.io.IOException;
+import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.InitialContext;
@@ -21,6 +23,7 @@ import client.controller.web.inputController.actions.UnknownAction;
 import loadBal.ILoadBalancer;
 import server.IWideBox;
 import utilities.Cache;
+import zooKeeper.IZKClient;
 
 
 /**
@@ -66,23 +69,24 @@ import utilities.Cache;
 @WebServlet(FrontController.ACTION_PATH + "/*")
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	
-	private static final String LOADBALANCER_PORT = "5002";
-	private static final String LOADBALANCER_IP = "10.101.148.59";
-	
+
+	private static final String ZOOKEEPER_PORT = "5003";
+	private static final String ZOOKEEPER_IP = "10.101.148.59";
+
 	private static AtomicInteger serialClient;
 	public static Cache cache;
-	
+
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
-	private static ILoadBalancer lb;
+	private static IZKClient zk;
+	private static List<ILoadBalancer> lbs;
 	private static IWideBox server;
-	
+
 	/**
 	 * Maps http actions to the objects that are going to handle them
 	 */
 	protected HashMap<String, String> actionHandlers;
-	
+
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
@@ -91,19 +95,19 @@ public class FrontController extends HttpServlet {
 		//String actionJNDI = getActionHandlerAddress(ACTION_PATH + actionURL);
 		Action actionCommand = null;
 		switch (actionURL) {
-		
+
 		case "/QueryTheatre":
 			actionCommand = new QueryTheatreAction();
 			break;
-			
+
 		case "/seatReply":
 			actionCommand = new SeatReplyAction();
 			break;
-			
+
 		case "/chooseSeat":
 			actionCommand = new ChooseSeatAction();
 			break;
-			
+
 		default:
 			actionCommand = new UnknownAction();
 			break;
@@ -118,28 +122,32 @@ public class FrontController extends HttpServlet {
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		doGet(request, response);
 	}
-	
+
 	public static ILoadBalancer getLoadBalancer() {
-		return lb;
+		return lbs.get(0);
 	}
 	
+	public static void removeLoadBalancer(){
+		lbs.remove(0);
+	}
+
 	public static void setServer(String server2) {
 		server = cache.get(server2);
 	}
-	
+
 	public static IWideBox getServer() {
 		return server;
 	}
-	
+
 	public InitialContext getInitialContex() {
 		return context;
 	}
-	
+
 	public static int getId() {
 		return serialClient.incrementAndGet();
 	}
-	
-	
+
+
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#init()
 	 */
@@ -154,10 +162,26 @@ public class FrontController extends HttpServlet {
 		serialClient = new AtomicInteger();
 		try {
 			context = new InitialContext();
-			Registry registry = LocateRegistry.getRegistry(LOADBALANCER_IP, Integer.parseInt(LOADBALANCER_PORT));
-			lb = (ILoadBalancer) registry.lookup("LoadBalancer");
-		//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
-		//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );
+			Registry registry = LocateRegistry.getRegistry(ZOOKEEPER_IP, 
+					Integer.parseInt(ZOOKEEPER_PORT));
+			zk = (IZKClient) registry.lookup("ZooKeeperServer");
+
+			List<String> lbsZK = zk.getAllLBNodes();
+			for(String s : lbsZK){
+				String[] split = s.split(":");
+				registry = LocateRegistry.getRegistry(split[0],
+						Integer.parseInt(split[1]));
+				ILoadBalancer server = null;
+				try {
+					server = (ILoadBalancer) registry.lookup("LoadBalancer");
+					lbs.add(server);
+				} catch (NotBoundException e) {
+					e.printStackTrace();
+				}
+			}
+
+			//actionHandlers.put("WideBoxServer", getWideBoxServer().toString());
+			//actionHandlers.put("WideBoxServer", "rmi://" + SERVER_IP +":" + SERVER_PORT	+ "/WideBoxServer" );
 		} catch (Exception e) {
 			// It was not able to load properties file.
 			// Bad luck, all action will be dispatched to the UnknownAction
