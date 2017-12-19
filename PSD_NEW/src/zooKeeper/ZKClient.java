@@ -27,12 +27,12 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 
 	public ZKClient() throws IOException, KeeperException, InterruptedException{
 		zk = new ZooKeeper("", 2000, new Watcher() {
-            public void process(WatchedEvent event) {
-            }
-        });
+			public void process(WatchedEvent event) {
+			}
+		});
 		//2nd argument session timeout!
 	}
-	
+
 	//GROUP MEMBERSHIP
 
 	@Override
@@ -44,7 +44,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			String ipPort = ip + ":" + port + ":" + pid; 
 			if(stat != null) {
 				//creates child node that represents him
-				
+
 				String node = zk.create(root + "/server", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
@@ -60,18 +60,26 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
 				System.out.println("ZooKeeper created node " + node);
 			}
-			
-			List<String> lbNodes = getAllLBNodes();
-			if(!lbNodes.isEmpty()) {
-				for(int i = 0; i < lbNodes.size(); i++) {
-					String [] split = lbNodes.get(i).split(":");
-					Registry reg = LocateRegistry.getRegistry(split[0], 
-							Integer.parseInt(split[1]));
-					try {
-						ILoadBalancer lb = (ILoadBalancer) reg.lookup("LoadBalancer");
-						lb.addServer(ipPort);
-					} catch (Exception e) {
-						continue;
+			boolean inicio = false;
+			String root2 = "/loadBalancers";
+			try {
+				List<String> children = zk.getChildren(root2, true);
+			} catch (KeeperException e) {
+				inicio = true;
+			}
+			if(!inicio) {
+				List<String> lbNodes = getAllLBNodes();
+				if(!lbNodes.isEmpty()) {
+					for(int i = 0; i < lbNodes.size(); i++) {
+						String [] split = lbNodes.get(i).split(":");
+						Registry reg = LocateRegistry.getRegistry(split[0], 
+								Integer.parseInt(split[1]));
+						try {
+							ILoadBalancer lb = (ILoadBalancer) reg.lookup("LoadBalancer");
+							lb.addServer(ipPort);
+						} catch (Exception e) {
+							continue;
+						}
 					}
 				}
 			}
@@ -108,7 +116,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 
 		return result;
 	}
-	
+
 	public int createLBNode(String ip, String port, String pid) {
 		try {
 			String root = "/loadBalancers";
@@ -117,7 +125,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			String ipPort = ip + ":" + port + ":" + pid; 
 			if(stat != null) {
 				//creates child node that represents him
-				
+
 				String node = zk.create(root + "/lb", ipPort.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
@@ -140,11 +148,11 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			e.printStackTrace();
 			return -1;
 		} 
-		
-		
+
+
 		return 0;
 	}
-	
+
 	public List<String> getAllLBNodes() throws RemoteException {
 		String root = "/loadBalancers";
 		List<String> result = new ArrayList<>();
@@ -164,12 +172,12 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 
 		return result;
 	}
-	
+
 	@Override
 	public int createDBNode(String ip, String port, int numberOfTheatres, int numberDBs, String pid) throws RemoteException {
 		int numOfTheatresPerDB = numberOfTheatres/numberDBs;
 		int res = 0;
-		
+
 		try {
 			String root = "/DBServers";
 			//root node exists 
@@ -177,12 +185,12 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			String ipPort = ip + ":" + port + ":" + numOfTheatresPerDB + ":" + pid; 
 			if(stat != null) {
 				//creates child node that represents him
-				
+
 				//get the number of theatre on used
-				
+
 				List<String> children = zk.getChildren(root, true);
 				String[] split = new String(zk.getData(root + "/" + children.get(children.size()-1), false, null)).split(":");
-				
+
 				String ipDB = ip + ":" + port + ":" + (Integer.parseInt(split[2]) + numOfTheatresPerDB) + ":" + pid;
 				String node = zk.create(root + "/server", ipDB.getBytes(), Ids.OPEN_ACL_UNSAFE,
 						CreateMode.PERSISTENT_SEQUENTIAL);
@@ -211,7 +219,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 
 		return res;
 	}
-	
+
 	@Override
 	public List<String> getAllDBNodes() throws RemoteException {
 		String root = "/DBServers";
