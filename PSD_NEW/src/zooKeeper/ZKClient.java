@@ -3,6 +3,8 @@ package zooKeeper;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,9 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
+
+import loadBal.ILoadBalancer;
+
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 
@@ -54,6 +59,21 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 						CreateMode.PERSISTENT_SEQUENTIAL);
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
 				System.out.println("ZooKeeper created node " + node);
+			}
+			
+			List<String> lbNodes = getAllLBNodes();
+			if(!lbNodes.isEmpty()) {
+				for(int i = 0; i < lbNodes.size(); i++) {
+					String [] split = lbNodes.get(i).split(":");
+					Registry reg = LocateRegistry.getRegistry(split[0], 
+							Integer.parseInt(split[1]));
+					try {
+						ILoadBalancer lb = (ILoadBalancer) reg.lookup("LoadBalancer");
+						lb.addServer(ipPort);
+					} catch (Exception e) {
+						continue;
+					}
+				}
 			}
 		} catch (KeeperException e) {
 			e.printStackTrace();
