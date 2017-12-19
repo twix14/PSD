@@ -23,7 +23,7 @@ public class ZKClient {
 
 	private ZooKeeper zk;
 	private BlockingQueue<WatchedEvent> events;
-
+	
 	public ZKClient(String ip, BlockingQueue<WatchedEvent> events) throws IOException, KeeperException, InterruptedException{
 		zk = new ZooKeeper(ip+":2181", 4000, new Watcher() {
 			public void process(WatchedEvent event) {
@@ -59,22 +59,21 @@ public class ZKClient {
 				//3 FASE PASSAR PARA EPHEMERAL, POR ENQUANTO NAO HA HEARTBEATS
 				System.out.println("ZooKeeper created node " + node);
 			}
-			
-			List<String> lbNodes = getAllLBNodes();
-			if(!lbNodes.isEmpty()) {
-				for(int i = 0; i < lbNodes.size(); i++) {
-					String [] split = lbNodes.get(i).split(":");
-					try {
+				List<String> lbNodes = getAllLBNodes();
+				if(!lbNodes.isEmpty()) {
+					for(int i = 0; i < lbNodes.size(); i++) {
+						String [] split = lbNodes.get(i).split(":");
+						try {
 						Registry reg = LocateRegistry.getRegistry(split[0], 
 								Integer.parseInt(split[1]));
-
-						ILoadBalancer lb = (ILoadBalancer) reg.lookup("LoadBalancer");
-						lb.addServer(ipPort);
-					} catch (Exception e) {
-						continue;
+						
+							ILoadBalancer lb = (ILoadBalancer) reg.lookup("LoadBalancer");
+							lb.addServer(ipPort);
+						} catch (Exception e) {
+							continue;
+						} 
 					}
 				}
-			}
 		} catch (KeeperException e) {
 			e.printStackTrace();
 			return -1;
@@ -180,7 +179,7 @@ public class ZKClient {
 
 		return result;
 	}
-
+	
 	public int createDBNode(String ip, String port, int numberOfTheatres, int numberDBs, String pid) {
 		int numOfTheatresPerDB = numberOfTheatres/numberDBs;
 		int res = 0;
@@ -227,7 +226,7 @@ public class ZKClient {
 
 		return res;
 	}
-
+	
 	public List<String> getAllDBNodes() {
 		String root = "/DBServers";
 		List<String> result = new ArrayList<>();
