@@ -65,6 +65,7 @@ public class ZKClient extends UnicastRemoteObject implements IZKClient{
 			try {
 				List<String> children = zk.getChildren(root2, true);
 			} catch (KeeperException e) {
+				//Ainda não existem LBNodes
 				inicio = true;
 			}
 			if(!inicio) {
