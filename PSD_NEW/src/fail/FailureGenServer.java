@@ -1,10 +1,15 @@
 package fail;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import zooKeeper.IZKClient;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+
+import zooKeeper.ZKClient;
 
 public class FailureGenServer {
 	
@@ -19,18 +24,23 @@ public class FailureGenServer {
 		//args[0] - failureGenerator IP
 		//args[1] - failureGenerator Port
 		//args[2] - ZooKeeper IP
-		//args[3] - ZooKeeper Port
 		
 		try {
-			//get the zookeeper client
-			Registry registry = LocateRegistry.getRegistry(args[2], 
-					Integer.parseInt(args[3]));
-			IZKClient zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
+			ZKClient zooKeeper = null;
+			try {
+				zooKeeper = new ZKClient(args[2], new LinkedBlockingQueue<WatchedEvent>());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (KeeperException e1) {
+				e1.printStackTrace();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
 			System.out.println("Connected to ZooKeeper");
 			
 			System.setProperty("java.rmi.server.hostname", args[0]);
 			FailureGen fg = new FailureGen(zooKeeper);
-			registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
+			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("FailureGenerator", fg);
 		} catch (RemoteException e) {
 			System.err.println("Error in getting registry");

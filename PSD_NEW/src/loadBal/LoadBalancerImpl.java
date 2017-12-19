@@ -9,10 +9,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import server.IWideBox;
 import server.Message;
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalancer{
 
@@ -26,19 +27,22 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 	private List<String> serversClient;
 	//Lock for round robin
 	int roundRobin;
+	
+	private AtomicInteger primary;
 
 	//Maximum operations with the current available app servers
 	private int startMax;
 
-	private IZKClient zooKeeper;
+	private ZKClient zooKeeper;
 
-	protected LoadBalancerImpl(IZKClient zooKeeper) throws RemoteException {
+	public LoadBalancerImpl(ZKClient zooKeeper) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 
 		//get all ips and remote appserver objects
 		List<String> ips = this.zooKeeper.getAllAppServerNodes();
 		servers = new LinkedList<>();
 		serversClient = new LinkedList<>();
+		primary = new AtomicInteger(0);
 		roundRobin = 0;
 		
 		/*
@@ -70,6 +74,11 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 	@Override
 	public Message requestSearch() throws RemoteException {
+		
+		if(primary.get() == 0) {
+			System.out.println("I'm the primary!");
+			primary.incrementAndGet();
+		}
 
 		if(messages.size() >= startMax)
 			return new Message(Message.BUSY);
@@ -80,20 +89,28 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		roundRobin++;
 		
 		int serv = roundRobin % servers.size();
+		String s = serversClient.get(serv);
 
 		//dispatch request to next server using round robin!
-		IWideBox server = servers.get(serv);
 		Message result = null;
 		try {
+			IWideBox server = servers.get(serv);
+			
 			result = server.search();
+			
+			result.setServer(serversClient.get(serv));
+		} catch (IndexOutOfBoundsException e) {
+			return requestSearch();
 		} catch (RemoteException e) {
 			//server offline
-			servers.remove(serv);
-			serversClient.remove(serv);
+			if(serversClient.contains(s)) {
+				System.out.println("AppServer is offline, trying another one");
+				servers.remove(serv);
+				serversClient.remove(serv);
+			}
+			
 			return requestSearch();
 		}
-		
-		result.setServer(serversClient.get(serv));
 
 		//is it important to get the exact same message that you placed?????
 		//to be tested!!!!
@@ -108,6 +125,11 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 	@Override
 	public Message requestSeatAvailable(int clientId, String theatre) throws RemoteException {
+		if(primary.get() == 0) {
+			System.out.println("I'm the primary!");
+			primary.incrementAndGet();
+		}
+		
 		if(messages.size() >= startMax)
 			return new Message(Message.BUSY);
 		else 
@@ -117,21 +139,29 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		roundRobin++;
 		
 		int serv = roundRobin % servers.size();
+		String s = serversClient.get(serv);
 		
 		//dispatch request to next server using round robin!
-		IWideBox server = servers.get(serv);
 		Message result = null;
 		try {
+			IWideBox server = servers.get(serv);
+			
 			result = server.seatsAvailable(clientId, theatre);
+		
+			//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
+			result.setServer(serversClient.get(serv));
+		} catch (IndexOutOfBoundsException e) {
+			return requestSeatAvailable(clientId, theatre);
 		} catch (RemoteException e) {
 			//server offline
-			servers.remove(serv);
-			serversClient.remove(serv);
-			return requestSearch();
+			if(serversClient.contains(s)) {
+				System.out.println("AppServer is offline, trying another one");
+				servers.remove(serv);
+				serversClient.remove(serv);
+			}
+			
+			return requestSeatAvailable(clientId, theatre);
 		}
-		
-		//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
-		result.setServer(serversClient.get(serv));
 		
 		//is it important to get the exact same message that you placed?????
 		//to be tested!!!!
@@ -159,7 +189,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 						+ "with Ip:Port-" + server2);
 				e.printStackTrace();
 			}
-			System.out.println("Connected to AppServer with Ip:Port-"
+			System.out.println("Added AppServer with Ip:Port-"
 					+ server2);
 		}
 	}

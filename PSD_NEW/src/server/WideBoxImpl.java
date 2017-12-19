@@ -1,5 +1,6 @@
 package server;
 
+import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -13,12 +14,15 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.zookeeper.KeeperException;
+
 import java.util.Collections;
 
 import db.IWideBoxDB;
 import utilities.Session;
 import utilities.Status;
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
@@ -39,7 +43,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	//List with starting servers
 	private List<IWideBoxDB> servers;
 	
-	private IZKClient zooKeeper;
+	private ZKClient zooKeeper;
 	private int div;
 	private int max;
 	
@@ -47,7 +51,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	
 	private int res1;
 
-	public WideBoxImpl(IZKClient zooKeeper) throws RemoteException {
+	public WideBoxImpl(ZKClient zooKeeper) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 		//ver params iniciais
 		requests = new AtomicInteger();
@@ -57,7 +61,6 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		
 		//get all ips and remote appserver objects
 		List<String> ips = this.zooKeeper.getAllDBNodes();
-		Collections.reverse(ips);
 		servers = new LinkedList<>();
 
 		/*

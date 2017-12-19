@@ -1,41 +1,50 @@
 package db;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Scanner;
 import java.util.TreeMap;
+import java.util.concurrent.LinkedBlockingQueue;
+
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
 
 import utilities.Status;
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 public class WideBoxDBServer {
 		
 	public static void main(String[] args) throws Exception {
 
 		IWideBoxDB db = null;
-		IZKClient zooKeeper = null;
+		ZKClient zooKeeper = null;
 		
 		//args[0] DBServer IP
 		//args[1] DBServer port
 		//args[2] zooKeeper IP
-		//args[3] zooKeeper Port
-		//args[4] numberOfTheatres
-		//args[5] numberDBs
+		//args[3] numberOfTheatres
+		//args[4] numberDBs
 		
 		try {
 			System.setProperty("java.rmi.server.hostname", args[0]);
 			
-			Registry registry = LocateRegistry.getRegistry(args[2], 
-					Integer.parseInt(args[3]));
-			zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
+			try {
+				zooKeeper = new ZKClient(args[2], new LinkedBlockingQueue<WatchedEvent>());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (KeeperException e1) {
+				e1.printStackTrace();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
 			System.out.println("Connected to ZooKeeper");
 			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
-			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[4]), Integer.parseInt(args[5]),
+			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
 					pid[0]);
-			db = new WideBoxDB(last, (Integer.parseInt(args[4])/Integer.parseInt(args[5])));
+			db = new WideBoxDB(last, (Integer.parseInt(args[3])/Integer.parseInt(args[4])));
 			
 			Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry2.rebind("WideBoxDBServer", db);
@@ -52,11 +61,7 @@ public class WideBoxDBServer {
 			System.err.println("Error in getting registry");
 			e.printStackTrace();
 			 
-		} catch (NotBoundException e) {
-			System.err.println("Error in getting the WideBoxDB or ZKClient");
-			e.printStackTrace();
-		
-		} catch (Exception e) {
+		}  catch (Exception e) {
 			System.err.println("WideBoxDBServer - Error trying  to start the server!");
 			e.printStackTrace();
 		}

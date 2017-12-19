@@ -5,14 +5,14 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.List;
 
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 public class FailureGen extends UnicastRemoteObject implements IFailureGen {
 
 	private static final long serialVersionUID = -3899176830026285501L;
-	private IZKClient zk;
+	private ZKClient zk;
 
-	public FailureGen(IZKClient zooKeeper) throws RemoteException{
+	public FailureGen(ZKClient zooKeeper) throws RemoteException{
 		zk = zooKeeper;
 	}
 

@@ -1,20 +1,28 @@
 package loadGen;
 
+import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 
 import db.IWideBoxDB;
 import loadBal.ILoadBalancer;
@@ -22,8 +30,7 @@ import server.IWideBox;
 import server.Message;
 import utilities.Cache;
 import utilities.Session;
-import utilities.Status;
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 public class Generator {
 
@@ -36,7 +43,7 @@ public class Generator {
 	public Cache cache;
 
 	public List<ILoadBalancer> lbs;
-	public IZKClient zk;
+	public ZKClient zk;
 
 	private static final int ratePS = 165;
 
@@ -54,13 +61,22 @@ public class Generator {
 		ScheduledExecutorService es= null;
 
 		//args[0] - zooKeeper IP
-		//args[1] - zooKeeper Port
 
 		Registry registry;
+		BlockingQueue<WatchedEvent> events = new LinkedBlockingQueue<WatchedEvent>();
 		try {
-			registry = LocateRegistry.getRegistry(args[0], 
-					Integer.parseInt(args[1]));
-			zk = (IZKClient) registry.lookup("ZooKeeperServer");
+			try {
+				zk = new ZKClient(args[0], events);
+				System.out.println("Connected to ZooKeeper");
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (KeeperException e1) {
+				e1.printStackTrace();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
+			}
+
+			lbs = new LinkedList<>();
 
 			List<String> lbsZK = zk.getAllLBNodes();
 			for(String s : lbsZK){
@@ -76,36 +92,58 @@ public class Generator {
 			e.printStackTrace();
 		}
 
-		ILoadBalancer lb = lbs.get(0);
+		ILoadBalancer lb = null;
+		if(!lbs.isEmpty()) {
+			lb = lbs.get(0);
+		} else {
+			System.out.println("No LoadBalancer online!");
+			System.exit(0);
+		}
+		
 
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
-		es = Executors.newScheduledThreadPool(1);
+		es = Executors.newSingleThreadScheduledExecutor();
 
 		Runnable task = () -> {
-			try {
-				List<String> lbsList = zk.getAllLBNodes();
-				//add the loadbalancer that recovered!
-				if(lbsList.size() == 2 && lbs.size() == 1){
-					String backup = lbsList.get(1);
-					String[] split = backup.split(":");
-					Registry registry2 = LocateRegistry.getRegistry(split[0],
-							Integer.parseInt(split[1]));
-					ILoadBalancer server = null;
+			while(true) {
+				if(!events.isEmpty()) {
+					WatchedEvent we = null;
 					try {
-						server = (ILoadBalancer) registry2.lookup("LoadBalancer");
-					} catch (NotBoundException e) {
+						we = events.take();
+					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					lbs.add(server);
-				}
 
-			} catch (RemoteException e) {
-				e.printStackTrace();
+					//LoadBalancer offline
+					if(we.getType().equals(Watcher.Event.EventType.NodeDeleted)) {
+						System.out.println("LoadBalancer is offline, ZooKeeper timeout");
+					} else if (we.getType().equals(Watcher.Event.EventType.NodeChildrenChanged)) { 
+						//LoadBalancer back online, since the children
+						List<String> lbNodes = zk.getAllLBNodes();
+						if(lbNodes.size() == 2) {
+							//node was added to children
+							try {
+								String s = lbNodes.get(1);
+								String[] split = s.split(":");
+								Registry registry2 = LocateRegistry.getRegistry(split[0],
+										Integer.parseInt(split[1]));
+								ILoadBalancer server = null;
+								server = (ILoadBalancer) registry2.lookup("LoadBalancer");
+								lbs.add(server);
+							} catch (NumberFormatException | NotBoundException | RemoteException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+
+						} //else node was deleted from children
+
+					}
+				}
 			}
 		};
 
-		es.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+		es.execute(task);
 
 		cache = new Cache();
 
@@ -252,19 +290,35 @@ public class Generator {
 	public void starOpWithoutRate(ILoadBalancer lb, String[] args,
 			int op, String duration, int clientId, String theatre, ExecutorService es) {
 		try {
-			new AllAppServersRate(duration, args).start();
+			//new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = null;
 			try{
 				m = lb.requestSearch();
-			} catch (ConnectException e) {
+			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
-				lbs.remove(0);
-				lb = lbs.get(0);
-				m = lb.requestSearch();
+
+				if(lbs.contains(lb)) {
+					lbs.remove(0);
+					
+				}
+				
+				try {
+					lb = lbs.get(0);
+				} catch (IndexOutOfBoundsException e2) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+				
+				try {
+					m = lb.requestSearch();
+				} catch (ConnectException e1) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
 			}
-			
+
 			Gen g = new Gen(lb, m, op, clientId, theatre);
 			//es.execute(g);
 			g.start();
@@ -287,17 +341,34 @@ public class Generator {
 	public void starOp(ILoadBalancer lb, int op, String duration,  String[] args,
 			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
-			new AllAppServersRate(duration, args).start();
+			//new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = null;
 			try{
 				m = lb.requestSearch();
-			} catch (ConnectException e) {
+			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
-				lbs.remove(0);
-				lb = lbs.get(0);
-				m = lb.requestSearch();
+
+				if(lbs.contains(lb)) {
+					lbs.remove(0);
+					
+				}
+				
+				try {
+					lb = lbs.get(0);
+				} catch (IndexOutOfBoundsException e2) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+				
+				try {
+					m = lb.requestSearch();
+				} catch (ConnectException e1) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+
 			}
 
 			List<Gen> list = new ArrayList<>();
@@ -361,7 +432,6 @@ public class Generator {
 		private int op;
 		private int clientId;
 		private String theatre;
-		private int i;
 
 		public Gen(ILoadBalancer lb, Message m, int op, 
 				int clientId, String theatre) {
@@ -377,7 +447,6 @@ public class Generator {
 			//Random rand2 = new Random()
 			Message m2 = null;
 			Session ses = null;
-			i = 0;
 			switch(op) {
 
 			//SSQ
@@ -402,7 +471,7 @@ public class Generator {
 			case 3:
 				while(keepGoing) {
 					clientId = rand.nextInt(NRCL);
-					query(clientId, theatre, m2, false);i++;
+					query(clientId, theatre, m2, false);
 				}
 				break;
 
@@ -454,27 +523,48 @@ public class Generator {
 
 		}
 
-		public void purchase(int client, String theatre, List<String> listTheatres) throws RemoteException {
+		public void purchase(int client, String theatre, List<String> listTheatres) {
 			Message m2 = null;
 			Session ses = null;
 			int value = 0;
 			Random rand = new Random();
-			
+
 			try{
 				m2 = lb.requestSeatAvailable(client, theatre);
-			} catch (ConnectException e) {
+			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
-				lbs.remove(0);
-				lb = lbs.get(0);
-				m2 = lb.requestSeatAvailable(client, theatre);
+				
+				if(lbs.contains(lb)) {
+					lbs.remove(0);
+					
+				}
+				
+				try {
+					lb = lbs.get(0);
+				} catch (IndexOutOfBoundsException e2) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+				
+				try {
+					m2 = lb.requestSeatAvailable(client, theatre);
+				} catch (RemoteException e1) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
 			}
-			
+
 			ses = m2.getSession();
 
 			IWideBox server = cache.get(m2.getServer());
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
-				server.acceptSeat(ses);
+				try {
+					server.acceptSeat(ses);
+				} catch (RemoteException e) {
+					System.out.println("AppServer offline, contacting the load balancer again");
+					purchase(client, theatre, listTheatres);
+				}
 			}
 
 			else if (m2.getStatus().equals(Message.FULL)) {
@@ -489,34 +579,53 @@ public class Generator {
 
 		private void query (int clientId, String theatre, Message m2, boolean search) {
 			long t0 = System.nanoTime();
-			try {
-				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
-				try{
-					m2 = lb.requestSeatAvailable(clientId, theatre);
-				} catch (ConnectException e) {
-					System.err.println("Retrying connection...");
+			//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
+			try{
+				m2 = lb.requestSeatAvailable(clientId, theatre);
+			} catch (RemoteException e) {
+				System.err.println("Retrying connection...");
+				
+				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					lb = lbs.get(0);
-					m2 = lb.requestSeatAvailable(clientId, theatre);
+					
 				}
 				
-				IWideBox server = cache.get(m2.getServer());
+				try {
+					lb = lbs.get(0);
+				} catch (IndexOutOfBoundsException e2) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+				
+				
+				try {
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				} catch (RemoteException e1) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+			}
 
-				if(m2.getStatus().equals(Message.AVAILABLE)) {
-					//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
-					//TO THIS REQUEST!
+			IWideBox server = cache.get(m2.getServer());
+
+			if(m2.getStatus().equals(Message.AVAILABLE)) {
+				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
+				//TO THIS REQUEST!
+				try {
 					server.cancelSeat(m2.getSession());
-
+				} catch (RemoteException e) {
+					System.out.println("AppServer offline, contacting the load balancer again");
+					query(clientId, theatre, m2, search);
 				}
 
-				else if(m2.getStatus().equals(Message.FULL)) {
-				}
 
-				else if(m2.getStatus().equals(Message.BUSY)) {
-					System.out.println("The system is busy!");
-				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
+			}
+
+			else if(m2.getStatus().equals(Message.FULL)) {
+			}
+
+			else if(m2.getStatus().equals(Message.BUSY)) {
+				System.out.println("The system is busy!");
 			}
 			long t1 = System.nanoTime();
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
@@ -526,36 +635,54 @@ public class Generator {
 		private void purch(int clientId, String theatre, Message m2, 
 				Session ses, Random rand, boolean search) {
 			long t0 = System.nanoTime();
-			try {
-				//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
-				try{
-					m2 = lb.requestSeatAvailable(clientId, theatre);
-				} catch (ConnectException e) {
-					System.err.println("Retrying connection...");
+			//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
+			try{
+				m2 = lb.requestSeatAvailable(clientId, theatre);
+			} catch (RemoteException e) {
+				System.err.println("Retrying connection...");
+
+				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					lb = lbs.get(0);
-					m2 = lb.requestSeatAvailable(clientId, theatre);
+					
 				}
 				
-				ses = m2.getSession();
-				IWideBox server = cache.get(m2.getServer());
+				try {
+					lb = lbs.get(0);
+				} catch (IndexOutOfBoundsException e2) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+				
+				try {
+					
+					m2 = lb.requestSeatAvailable(clientId, theatre);
+				} catch (RemoteException e1) {
+					System.out.println("System is offline");
+					System.exit(0);
+				}
+			}
 
-				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
-				//TO THIS REQUEST!
-				if(m2.getStatus().equals(Message.AVAILABLE)) {
+			ses = m2.getSession();
+			IWideBox server = cache.get(m2.getServer());
+
+			//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
+			//TO THIS REQUEST!
+			if(m2.getStatus().equals(Message.AVAILABLE)) {
+				try {
 					server.acceptSeat(ses);
+				} catch (RemoteException e) {
+					System.out.println("AppServer offline, contacting the load balancer again");
+					query(clientId, theatre, m2, search);
 				}
+			}
 
-				else if (m2.getStatus().equals(Message.FULL)) {
-					purchase(clientId, m.getTheatres().get(rand.nextInt(
-							m.getTheatres().size())), m.getTheatres());
-				} 
+			else if (m2.getStatus().equals(Message.FULL)) {
+				purchase(clientId, m.getTheatres().get(rand.nextInt(
+						m.getTheatres().size())), m.getTheatres());
+			} 
 
-				else if(m2.getStatus().equals(Message.BUSY)) {
-					System.out.println("The system is busy!");
-				}
-			} catch (RemoteException e) {
-				e.printStackTrace();
+			else if(m2.getStatus().equals(Message.BUSY)) {
+				System.out.println("The system is busy!");
 			}
 			long t1 = System.nanoTime();
 			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
@@ -628,31 +755,26 @@ public class Generator {
 
 	public class AllAppServersRate extends Thread {
 
-		private IZKClient zooKeeper;
+		private ZKClient zooKeeper;
 		private String duration;
 
 		public AllAppServersRate(String duration, String[] args) {
 			this.duration = duration;
-			Registry registry;
 			try {
-				registry = LocateRegistry.getRegistry(args[2], 
-						Integer.parseInt(args[3]));
-				zooKeeper = (IZKClient) registry.lookup("ZooKeeperServer");
-			} catch (NumberFormatException | NotBoundException | RemoteException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				zooKeeper = new ZKClient(args[0], new LinkedBlockingQueue<WatchedEvent>());
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			} catch (KeeperException e1) {
+				e1.printStackTrace();
+			} catch (InterruptedException e1) {
+				e1.printStackTrace();
 			}
 
 		}
 
 		public void run() {
 			List<String> ips = null;
-			try {
-				ips = zooKeeper.getAllAppServerNodes();
-			} catch (RemoteException e1) {
-				System.err.println("Problems connecting to ZooKeeper");
-				e1.printStackTrace();
-			}
+			ips = zooKeeper.getAllAppServerNodes();
 			int id = 1;
 			for(String ip: ips) {
 				String[] split = ip.split(":");
