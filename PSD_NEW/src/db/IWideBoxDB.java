@@ -27,4 +27,8 @@ public interface IWideBoxDB extends Remote {
 	public int getRate() throws RemoteException;
 	
 	public void fullTheatre(String theatre) throws RemoteException;
+	
+	public boolean ping() throws RemoteException;
+	
+	public boolean connectToSecondary(String ip, int port) throws RemoteException;
 }

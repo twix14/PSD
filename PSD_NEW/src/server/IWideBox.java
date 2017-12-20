@@ -26,10 +26,6 @@ public interface IWideBox extends Remote {
 	public Message reserveNewSeat(Session ses, String result) throws RemoteException;
 	
 	public Message cancelSeat(Session ses) throws RemoteException;
-
-	public void crash() throws RemoteException;
-	
-	public void reset() throws RemoteException;
 	
 	public int getRate(int duration) throws RemoteException;
 	

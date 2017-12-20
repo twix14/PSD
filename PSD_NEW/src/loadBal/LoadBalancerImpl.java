@@ -97,6 +97,12 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			IWideBox server = servers.get(serv);
 			
 			result = server.search();
+			while(true) {
+				if(result.getStatus().equals("Retry"))
+					result = server.search();
+				else
+					break;
+			}
 			
 			result.setServer(serversClient.get(serv));
 		} catch (IndexOutOfBoundsException e) {
@@ -147,6 +153,13 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			IWideBox server = servers.get(serv);
 			
 			result = server.seatsAvailable(clientId, theatre);
+			while(true){
+				if(result.getStatus().equals("Retry"))
+					result = server.seatsAvailable(clientId, theatre);
+				else
+					break;
+			}
+			
 		
 			//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
 			result.setServer(serversClient.get(serv));

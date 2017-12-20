@@ -21,12 +21,14 @@ public class WideBoxDBServer {
 
 		IWideBoxDB db = null;
 		ZKClient zooKeeper = null;
+		IWideBoxDB primaryServer;
 		
 		//args[0] DBServer IP
 		//args[1] DBServer port
 		//args[2] zooKeeper IP
 		//args[3] numberOfTheatres
 		//args[4] numberDBs
+		//args[5] P/S (Primary/Secondary)
 		
 		try {
 			System.setProperty("java.rmi.server.hostname", args[0]);
@@ -42,19 +44,34 @@ public class WideBoxDBServer {
 			}
 			System.out.println("Connected to ZooKeeper");
 			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
-			int last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
-					pid[0]);
-			db = new WideBoxDB(last, (Integer.parseInt(args[3])/Integer.parseInt(args[4])));
 			
-			Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
-			registry2.rebind("WideBoxDBServer", db);
+			int last = 0;
+			
+			if(args[5].equals("P")) {
+				last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
+					pid[0]);
+				db = new WideBoxDB(last, (Integer.parseInt(args[3])/Integer.parseInt(args[4])), true);
+				Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
+				registry2.rebind("WideBoxDBServer", db);
+			} else {
+				String[] temp = zooKeeper.createSecondaryDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
+						pid[0]);
+				db = new WideBoxDB(Integer.parseInt(temp[0]), (Integer.parseInt(args[3])/Integer.parseInt(args[4])), false);
+				Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
+				registry2.rebind("WideBoxDBServer", db);
+				
+				Registry primaryRegistry = LocateRegistry.getRegistry(temp[1], Integer.parseInt(temp[2]));
+				primaryServer = (IWideBoxDB) primaryRegistry.lookup("WideBoxDBServer");
+				primaryServer.connectToSecondary(args[0], Integer.parseInt(args[1]));
+				primaryServer = null;
+			}
+			
 			System.out.println("DB loaded\n");
 			System.out.println("Commands:");
 			System.out.println("-->'print db n-theatre' command to print status of a theatre");
 			System.out.println("-->'full n-theatre' to full a theatre");
 			System.out.println("-->'get n-theatre'");
 			System.out.println("-->'put n-theatre n-seat newValue oldValue'");
-			
 			//
 			
 		} catch (RemoteException e) {

@@ -99,7 +99,7 @@ public class Generator {
 			System.out.println("No LoadBalancer online!");
 			System.exit(0);
 		}
-		
+
 
 		requests = new AtomicInteger();
 		avglatency = new AtomicLong();
@@ -301,16 +301,16 @@ public class Generator {
 
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					
+
 				}
-				
+
 				try {
 					lb = lbs.get(0);
 				} catch (IndexOutOfBoundsException e2) {
 					System.out.println("System is offline");
 					System.exit(0);
 				}
-				
+
 				try {
 					m = lb.requestSearch();
 				} catch (ConnectException e1) {
@@ -352,16 +352,16 @@ public class Generator {
 
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					
+
 				}
-				
+
 				try {
 					lb = lbs.get(0);
 				} catch (IndexOutOfBoundsException e2) {
 					System.out.println("System is offline");
 					System.exit(0);
 				}
-				
+
 				try {
 					m = lb.requestSearch();
 				} catch (ConnectException e1) {
@@ -533,19 +533,24 @@ public class Generator {
 				m2 = lb.requestSeatAvailable(client, theatre);
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
-				
+
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					
+
 				}
-				
+
 				try {
 					lb = lbs.get(0);
 				} catch (IndexOutOfBoundsException e2) {
-					System.out.println("System is offline");
-					System.exit(0);
+					if(lbs.size() == 0) {
+						System.out.println("System is offline");
+						System.exit(0);
+					} else {
+						purchase(client, theatre, listTheatres);
+					}
+
 				}
-				
+
 				try {
 					m2 = lb.requestSeatAvailable(client, theatre);
 				} catch (RemoteException e1) {
@@ -560,7 +565,13 @@ public class Generator {
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
 				try {
-					server.acceptSeat(ses);
+					Message result = server.acceptSeat(ses);
+					while(true) {
+						if(result.getStatus().equals("Retry"))
+							result = server.acceptSeat(ses);
+						else 
+							break;
+					}
 				} catch (RemoteException e) {
 					System.out.println("AppServer offline, contacting the load balancer again");
 					purchase(client, theatre, listTheatres);
@@ -584,20 +595,26 @@ public class Generator {
 				m2 = lb.requestSeatAvailable(clientId, theatre);
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
-				
+
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					
+
 				}
-				
+
 				try {
 					lb = lbs.get(0);
 				} catch (IndexOutOfBoundsException e2) {
-					System.out.println("System is offline");
-					System.exit(0);
+					if(lbs.size() == 0) {
+						System.out.println("System is offline");
+						System.exit(0);
+					} else {
+						query(clientId, theatre, m2, search);
+					}
+
+
 				}
-				
-				
+
+
 				try {
 					m2 = lb.requestSeatAvailable(clientId, theatre);
 				} catch (RemoteException e1) {
@@ -612,7 +629,13 @@ public class Generator {
 				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 				//TO THIS REQUEST!
 				try {
-					server.cancelSeat(m2.getSession());
+					Message result = server.cancelSeat(m2.getSession());
+					while(true) {
+						if(result.getStatus().equals("Retry"))
+							result = server.cancelSeat(m2.getSession());
+						else 
+							break;
+					}
 				} catch (RemoteException e) {
 					System.out.println("AppServer offline, contacting the load balancer again");
 					query(clientId, theatre, m2, search);
@@ -643,18 +666,23 @@ public class Generator {
 
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-					
+
 				}
-				
+
 				try {
 					lb = lbs.get(0);
 				} catch (IndexOutOfBoundsException e2) {
-					System.out.println("System is offline");
-					System.exit(0);
+					if(lbs.size() == 0) {
+						System.out.println("System is offline");
+						System.exit(0);
+					} else {
+						purch(clientId, theatre, m2, ses, rand, search);
+					}
+
 				}
-				
+
 				try {
-					
+
 					m2 = lb.requestSeatAvailable(clientId, theatre);
 				} catch (RemoteException e1) {
 					System.out.println("System is offline");
@@ -669,10 +697,18 @@ public class Generator {
 			//TO THIS REQUEST!
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
 				try {
-					server.acceptSeat(ses);
+					Message result = server.acceptSeat(ses);
+					
+					while(true) {
+						if(result.getStatus().equals("Retry"))
+							result = server.acceptSeat(ses);
+						else 
+							break;
+					}
+					
 				} catch (RemoteException e) {
 					System.out.println("AppServer offline, contacting the load balancer again");
-					query(clientId, theatre, m2, search);
+					purch(clientId, theatre, m2, ses, rand, search);
 				}
 			}
 

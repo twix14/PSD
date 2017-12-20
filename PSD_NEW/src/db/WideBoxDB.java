@@ -9,7 +9,10 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
@@ -61,8 +64,13 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	char[] alphabet = alf.toUpperCase().toCharArray();
 	
 	private int[] range;
+	
+	//Secondary
+	private IWideBoxDB secondaryServer = null;
+	private boolean primary = false;
+	private boolean secondaryUp = false;
 
-	protected WideBoxDB(int last, int numOfTheatresPerDB) throws RemoteException {
+	protected WideBoxDB(int last, int numOfTheatresPerDB, boolean primary) throws RemoteException {
 		super();
 		loadDB(last, numOfTheatresPerDB);
 		down = false;
@@ -78,6 +86,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		lock = new ReentrantLock();
 		log = new File("log.txt");
 		fileHash = new File("theatres.txt");
+		
+		this.primary = primary;
 
 		try {
 			fileHash.createNewFile();
@@ -92,9 +102,52 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			e.printStackTrace();
 		}
 	}
+	
+	public boolean connectToSecondary(String ip, int port) throws RemoteException{
+		boolean res = true;
+		
+		try {
+			Registry primaryRegistry = LocateRegistry.getRegistry(ip, port);
+			secondaryServer = (IWideBoxDB) primaryRegistry.lookup("WideBoxDBServer");
+			primary = true;
+			
+			// Ping just to know if secondary is up
+			if (secondaryServer.ping()) {
+				secondaryUp = true;
+				System.out.println("Connected to Secondary");
+			}
+				
+			
+		} catch (NotBoundException e) {
+			e.printStackTrace();
+		} catch (RemoteException e) {
+			e.printStackTrace();
+			secondaryUp = false;
+			System.err.println("Error trying to connect to the secondary");
+		}
+		
+		return res;
+	}
+	
+	public boolean ping() throws RemoteException {
+		primary = false;
+		secondaryUp = false;
+		System.out.println("Primary connected");
+		return true;
+	}
 
 	public boolean put(String theatre, String key, Status value, Status oldValue) throws RemoteException {
 		if(!down) {
+			
+			if (primary && secondaryUp && secondaryServer != null) {
+				try {
+				secondaryServer.put(theatre, key, value, oldValue);
+				} catch (RemoteException e) {
+					secondaryUp = false;
+					System.out.println("Secondary is down");
+				}
+				
+			}
 			boolean result = false;
 			ConcurrentHashMap<String,Status> curr = null;
 			String linha = null;
@@ -182,6 +235,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		int o = last-numOfTheatresPerDB+1;
 		for(int k = o; k <= last; k++) {
 			curr = new ConcurrentHashMap<String,Status>(NRCL * NRRW);
+			
+			if(k == 1500)
+				System.out.println("ddd");
 			for(int i = 0; i < NRRW; i++)
 				for (int j = 1; j <= NRCL; j++) {
 					curr.put(alphabet[i] + Integer.toString(j), Status.FREE);
