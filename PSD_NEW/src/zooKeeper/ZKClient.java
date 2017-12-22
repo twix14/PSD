@@ -252,7 +252,6 @@ public class ZKClient {
 					ipNew = new String(zk.getData(root + "/" + s, false, null)).split(":");
 					if (ipNew[4].equals("S") && temp < Integer.parseInt(ipNew[2])) {
 						temp = Integer.parseInt(ipNew[2]);
-						tempNode = s;
 					}
 				}
 
@@ -260,9 +259,11 @@ public class ZKClient {
 
 				if (temp == 0) {
 					temp = numOfTheatresPerDB;
-					tempNode = getDBNodeNameByData(temp);
+					
 					first = true;
 				}
+				
+				tempNode = getDBNodeNameByData(first? temp : temp + numOfTheatresPerDB);
 
 				String ipDB = ip + ":" + port + ":" + (first? temp : temp + numOfTheatresPerDB) + ":" + pid + ":S";
 
@@ -272,7 +273,7 @@ public class ZKClient {
 				System.out.println("ZooKeeper created Secondary DB node " + node);
 
 				String[] aa = new String(zk.getData(tempNode, false, null)).split(":");
-				res[0] = Integer.toString((temp));
+				res[0] = Integer.toString((first? temp : temp + numOfTheatresPerDB));
 				res[1] = aa[0];
 				res[2] = aa[1];
 
