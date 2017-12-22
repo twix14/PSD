@@ -8,8 +8,13 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 
 import server.IWideBox;
 import server.Message;
@@ -35,7 +40,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 	private ZKClient zooKeeper;
 
-	public LoadBalancerImpl(ZKClient zooKeeper) throws RemoteException {
+	public LoadBalancerImpl(ZKClient zooKeeper, BlockingQueue<String> events) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 
 		//get all ips and remote appserver objects
@@ -68,6 +73,30 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		}
 		this.messages = new LinkedBlockingQueue<>(ips.size()*1000);
 		startMax = ips.size()*1000;
+		
+		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
+		
+		Runnable task = () -> {
+			while(true) {
+				if(!events.isEmpty()) {
+					String we = null;
+					try {
+						we = events.take();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					//AppServer offline
+					System.out.println("App Server died, removing it from appServers list...");
+					int index = serversClient.indexOf(we);
+					serversClient.remove(index);
+					servers.remove(index);
+				}
+			}
+		};
+
+		es.execute(task);
+		
 
 		System.out.println("Ready to go!");
 	}

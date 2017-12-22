@@ -8,7 +8,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,12 +53,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private int res1;
 
-	public WideBoxImpl(ZKClient zooKeeper) throws RemoteException {
+	public WideBoxImpl(ZKClient zooKeeper, BlockingQueue<String> queue) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 		//ver params iniciais
 		requests = new AtomicInteger();
 		this.sessions = new ConcurrentHashMap<String,Long>();
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		ExecutorService ex = Executors.newSingleThreadExecutor();
 
 		//get all ips and remote appserver objects
 		List<Pair<String, String>> ips = this.zooKeeper.getAllDBNodesPairs();
@@ -95,6 +98,25 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		String[] split2 = ips.get(0).getKey().split(":");
 		div = Integer.parseInt(split2[2]);
 		max = Integer.parseInt(split2[2]) * ips.size();
+		
+		Runnable task2 = () -> {
+			while(true) {
+				if(!queue.isEmpty()) {
+					String we = null;
+					try {
+						we = queue.take();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+
+					//AppServer offline
+					System.out.println("DBServer died, removing it from DBServers list...");
+					ups.set((int)Integer.valueOf(we), new Pair<Boolean, Integer>(false, (int)Integer.valueOf(we)));
+				}
+			}
+		};
+		
+		ex.execute(task2);
 
 		Runnable task = () -> {
 			sessions.forEach((k, v) -> {

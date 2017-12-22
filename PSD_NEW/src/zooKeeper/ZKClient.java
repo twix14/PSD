@@ -18,12 +18,14 @@ import javafx.util.Pair;
 import loadBal.ILoadBalancer;
 
 import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 
 public class ZKClient {
 
 	private ZooKeeper zk;
 	private BlockingQueue<WatchedEvent> events;
+	private BlockingQueue<String> queue;
 
 	public ZKClient(String ip, BlockingQueue<WatchedEvent> events) throws IOException, KeeperException, InterruptedException{
 		zk = new ZooKeeper(ip+":2181", 4000, new Watcher() {
@@ -33,6 +35,8 @@ public class ZKClient {
 		//2nd argument session timeout!
 		this.events = events;
 	}
+	
+	
 
 	//GROUP MEMBERSHIP
 
@@ -93,7 +97,18 @@ public class ZKClient {
 			List<String> children = zk.getChildren(root, true);
 
 			for(String s : children) {
-				String ip = new String(zk.getData(root + "/" + s, false, null));
+				String ip1 = new String(zk.getData(root + "/" + s, false, null));
+				String ip = new String(zk.getData(root + "/" + s, new Watcher() {
+					//NODE DOWN!
+					public void process(WatchedEvent event) {
+						try {
+							if(event.getType().equals(Watcher.Event.EventType.NodeDeleted))
+								queue.put(ip1);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}, null));
 				result.add(ip);
 				System.out.println("AppServer with IP:Port-" + ip + " is on the group!");
 			}
@@ -146,12 +161,14 @@ public class ZKClient {
 		String root = "/loadBalancers";
 		List<String> result = new ArrayList<>();
 		try {
-			List<String> children = zk.getChildren(root,  new Watcher() {
-				//Added children
+			List<String> children = zk.getChildren(root, new Watcher() {
+				//NODE DOWN!
 				public void process(WatchedEvent event) {
 					try {
-						//event can only be nodeChildrenChanged
-						events.put(event);
+						if(event.getType().equals(Watcher.Event.EventType.NodeChildrenChanged) 
+								&& !event.getState().equals(KeeperState.Expired) && 
+								!event.getState().equals(KeeperState.Disconnected))
+							events.put(event);
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -163,7 +180,8 @@ public class ZKClient {
 					//NODE DOWN!
 					public void process(WatchedEvent event) {
 						try {
-							events.put(event);
+							if(event.getType().equals(Watcher.Event.EventType.NodeDeleted))
+								events.put(event);
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -336,11 +354,23 @@ public class ZKClient {
 		String root = "/DBServers";
 		List<Pair<String, String>> result = new ArrayList<>();
 		try {
-			List<String> children = zk.getChildren(root, true);
+			List<String> children = zk.getChildren(root, false);
 			Collections.sort(children);
 
+			int i = 0;
 			for(String s : children) {
-				String ip = new String(zk.getData(root + "/" + s, false, null));
+				final int j = i;
+				String ip = new String(zk.getData(root + "/" + s, new Watcher() {
+					//NODE DOWN!
+					public void process(WatchedEvent event) {
+						try {
+							if(event.getType().equals(Watcher.Event.EventType.NodeDeleted))
+								queue.put(String.valueOf(j));
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				}, null));
 				String[] split1 = ip.split(":");
 				if (ip.endsWith("P")) {
 					for(String s1 : children) {
@@ -352,7 +382,8 @@ public class ZKClient {
 						}
 					}
 					
-				} 
+				}
+				i++;
 			}
 			
 		} catch (KeeperException e) {
@@ -361,6 +392,10 @@ public class ZKClient {
 			e.printStackTrace();
 		}
 		return result;
+	}
+
+	public void setQueue(BlockingQueue<String> queue) {
+		this.queue = queue;
 	}
 
 

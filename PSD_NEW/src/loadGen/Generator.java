@@ -43,6 +43,7 @@ public class Generator {
 	public Cache cache;
 
 	public List<ILoadBalancer> lbs;
+	private ILoadBalancer lb;
 	public ZKClient zk;
 
 	private static final int ratePS = 165;
@@ -92,7 +93,6 @@ public class Generator {
 			e.printStackTrace();
 		}
 
-		ILoadBalancer lb = null;
 		if(!lbs.isEmpty()) {
 			lb = lbs.get(0);
 		} else {
@@ -117,7 +117,9 @@ public class Generator {
 
 					//LoadBalancer offline
 					if(we.getType().equals(Watcher.Event.EventType.NodeDeleted)) {
-						System.out.println("LoadBalancer is offline, ZooKeeper timeout");
+						lbs.remove(0);
+						lb = lbs.get(0);
+						System.out.println("Primary load balancer died");
 					} else if (we.getType().equals(Watcher.Event.EventType.NodeChildrenChanged)) { 
 						//LoadBalancer back online, since the children
 						List<String> lbNodes = zk.getAllLBNodes();
@@ -131,6 +133,7 @@ public class Generator {
 								ILoadBalancer server = null;
 								server = (ILoadBalancer) registry2.lookup("LoadBalancer");
 								lbs.add(server);
+								System.out.println("Load Balancer back up again!");
 							} catch (NumberFormatException | NotBoundException | RemoteException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -301,7 +304,6 @@ public class Generator {
 
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-
 				}
 
 				try {
