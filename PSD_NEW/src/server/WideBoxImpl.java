@@ -50,13 +50,10 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 	private int max;
 
 	List<String> theatresList = new LinkedList<String>();
-
-	private int res1;
-
 	public WideBoxImpl(ZKClient zooKeeper, BlockingQueue<String> queue, int numberOfTheatres) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 		//ver params iniciais
-		requests = new AtomicInteger();
+		requests = new AtomicInteger(0);
 		this.sessions = new ConcurrentHashMap<String,Long>();
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 		ExecutorService ex = Executors.newSingleThreadExecutor();
@@ -202,6 +199,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		};
 
 		executor.scheduleAtFixedRate(task, 0, 1, TimeUnit.SECONDS);
+		new Rate().start();
 	}
 
 	@Override
@@ -472,15 +470,25 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		requests.incrementAndGet();
 		return m;
 	}
+	
+	public class Rate extends Thread {
 
-	public void startRate() throws RemoteException {
-		res1 = requests.get();
-	}
+		public void run() {
+			while(true) {
+				try {
+					int res1 = requests.get();
+					Thread.sleep(1000);
+					int res2 = 0;
+					res2 = requests.get();
+					System.out.println("Serving " + (res2-res1) + "req/sec");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 
-	public int getRate(int duration) throws RemoteException{
-		int res2 = 0;
-		res2 = requests.get();
-		return  ((res2-res1)/duration);
+		}
+
 	}
 
 }

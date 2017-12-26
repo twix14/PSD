@@ -13,9 +13,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-
 import server.IWideBox;
 import server.Message;
 import zooKeeper.ZKClient;
@@ -32,8 +29,9 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 	private List<String> serversClient;
 	//Lock for round robin
 	int roundRobin;
-	
+
 	private AtomicInteger primary;
+	private AtomicInteger requests;
 
 	//Maximum operations with the current available app servers
 	private int startMax;
@@ -48,8 +46,9 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		servers = new LinkedList<>();
 		serversClient = new LinkedList<>();
 		primary = new AtomicInteger(0);
+		requests = new AtomicInteger(0);
 		roundRobin = 0;
-		
+
 		/*
 		 * The Round Robin algorithm is best for clusters 
 		 * consisting of servers with identical specs
@@ -73,9 +72,9 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		}
 		this.messages = new LinkedBlockingQueue<>(ips.size()*1000);
 		startMax = ips.size()*1000;
-		
+
 		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
-		
+
 		Runnable task = () -> {
 			while(true) {
 				if(!events.isEmpty()) {
@@ -96,13 +95,14 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		};
 
 		es.execute(task);
+		new Rate().start();
 
 		System.out.println("Ready to go!");
 	}
 
 	@Override
 	public Message requestSearch() throws RemoteException {
-		
+
 		if(primary.get() == 0) {
 			System.out.println("I'm the primary!");
 			primary.incrementAndGet();
@@ -115,7 +115,8 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 		//change next server to be assigned
 		roundRobin++;
-		
+		requests.incrementAndGet();
+
 		int serv = roundRobin % servers.size();
 		String s = serversClient.get(serv);
 
@@ -123,7 +124,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		Message result = null;
 		try {
 			IWideBox server = servers.get(serv);
-			
+
 			result = server.search();
 			while(true) {
 				if(result.getStatus().equals("Retry"))
@@ -131,7 +132,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 				else
 					break;
 			}
-			
+
 			result.setServer(serversClient.get(serv));
 		} catch (IndexOutOfBoundsException e) {
 			return requestSearch();
@@ -142,7 +143,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 				servers.remove(serv);
 				serversClient.remove(serv);
 			}
-			
+
 			return requestSearch();
 		}
 
@@ -163,7 +164,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			System.out.println("I'm the primary!");
 			primary.incrementAndGet();
 		}
-		
+
 		if(messages.size() >= startMax)
 			return new Message(Message.BUSY);
 		else 
@@ -171,15 +172,16 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 		//change next server to be assigned
 		roundRobin++;
-		
+		requests.incrementAndGet();
+
 		int serv = roundRobin % servers.size();
 		String s = serversClient.get(serv);
-		
+
 		//dispatch request to next server using round robin!
 		Message result = null;
 		try {
 			IWideBox server = servers.get(serv);
-			
+
 			result = server.seatsAvailable(clientId, theatre);
 			while(true){
 				if(result.getStatus().equals("Retry"))
@@ -187,8 +189,8 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 				else
 					break;
 			}
-			
-		
+
+
 			//ADD SERVER IP OR IWIDEBOX SO THE CLIENT CAN KNOW WHO HANDLES ITS REQUEST
 			result.setServer(serversClient.get(serv));
 		} catch (IndexOutOfBoundsException e) {
@@ -200,10 +202,10 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 				servers.remove(serv);
 				serversClient.remove(serv);
 			}
-			
+
 			return requestSeatAvailable(clientId, theatre);
 		}
-		
+
 		//is it important to get the exact same message that you placed?????
 		//to be tested!!!!
 		try {
@@ -221,7 +223,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			String[] split = server2.split(":");
 			try {
 				Registry registry = LocateRegistry.getRegistry(split[0],
-					Integer.parseInt(split[1]));
+						Integer.parseInt(split[1]));
 				IWideBox server = (IWideBox) registry.lookup("WideBoxServer");
 				servers.add(server);
 				serversClient.add(server2);
@@ -233,5 +235,25 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			System.out.println("Added AppServer with Ip:Port-"
 					+ server2);
 		}
+	}
+
+	public class Rate extends Thread {
+
+		public void run() {
+			while(true) {
+				try {
+					int res1 = requests.get();
+					Thread.sleep(1000);
+					int res2 = 0;
+					res2 = requests.get();
+					System.out.println("Serving " + (res2-res1) + "req/sec");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
+		}
+
 	}
 }

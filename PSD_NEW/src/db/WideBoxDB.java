@@ -62,9 +62,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	String alf = "abcdefghijklmnopqrstuvwxyz";
 	char[] alphabet = alf.toUpperCase().toCharArray();
-	
+
 	private int[] range;
-	
+
 	//Secondary
 	private IWideBoxDB secondaryServer = null;
 	private boolean primary = false;
@@ -77,7 +77,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		range = new int[2];
 		range [0] = range2[0];
 		range[1] = range2[1];
-		
+
 		es = Executors.newSingleThreadExecutor();
 
 		requests = new AtomicInteger();
@@ -85,8 +85,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		lock = new ReentrantLock();
 		log = new File("log.txt");
 		fileHash = new File("theatres.txt");
-		
+
 		this.primary = primary;
+		requests = new AtomicInteger(0);
 
 		try {
 			fileHash.createNewFile();
@@ -100,23 +101,24 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			System.out.println("Log file already exists.");
 			e.printStackTrace();
 		}
+		new Rate().start();
 	}
-	
+
 	public boolean connectToSecondary(String ip, int port) throws RemoteException{
 		boolean res = true;
-		
+
 		try {
 			Registry primaryRegistry = LocateRegistry.getRegistry(ip, port);
 			secondaryServer = (IWideBoxDB) primaryRegistry.lookup("WideBoxDBServer");
 			primary = true;
-			
+
 			// Ping just to know if secondary is up
 			if (secondaryServer.ping()) {
 				secondaryUp = true;
 				System.out.println("Connected to Secondary");
 			}
-				
-			
+
+
 		} catch (NotBoundException e) {
 			e.printStackTrace();
 		} catch (RemoteException e) {
@@ -124,10 +126,10 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			secondaryUp = false;
 			System.err.println("Error trying to connect to the secondary");
 		}
-		
+
 		return res;
 	}
-	
+
 	public boolean ping() throws RemoteException {
 		primary = false;
 		secondaryUp = false;
@@ -136,87 +138,76 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public boolean put(String theatre, String key, Status value, Status oldValue) throws RemoteException {
-		if(!down) {
-			
-			if (primary && secondaryUp && secondaryServer != null) {
-				try {
-				secondaryServer.put(theatre, key, value, oldValue);
-				} catch (RemoteException e) {
-					secondaryUp = false;
-					System.out.println("Secondary is down");
-				}
-				
-			}
-			boolean result = false;
-			ConcurrentHashMap<String,Status> curr = null;
-			String linha = null;
+		if (primary && secondaryUp && secondaryServer != null) {
 			try {
+				secondaryServer.put(theatre, key, value, oldValue);
+			} catch (RemoteException e) {
+				secondaryUp = false;
+				System.out.println("Secondary is down");
+			}
 
-				//lock.lock();
-				ByteBuffer mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+		}
+		boolean result = false;
+		ConcurrentHashMap<String,Status> curr = null;
+		String linha = null;
+		try {
 
-				linha = theatre + "," + key + "," + value + "," + oldValue;
-				mByteBuffer.put(linha.getBytes());
-				mByteBuffer.put(LINE_SEPARATOR.getBytes());
-				mByteBuffer.flip();
+			//lock.lock();
+			ByteBuffer mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
-				while (mByteBuffer.hasRemaining())
-					logChannel.write(mByteBuffer);
+			linha = theatre + "," + key + "," + value + "," + oldValue;
+			mByteBuffer.put(linha.getBytes());
+			mByteBuffer.put(LINE_SEPARATOR.getBytes());
+			mByteBuffer.flip();
 
-				logChannel.force(true);
-				fos.getFD().sync();
+			while (mByteBuffer.hasRemaining())
+				logChannel.write(mByteBuffer);
 
-				mByteBuffer.clear();
+			logChannel.force(true);
+			fos.getFD().sync();
 
-				curr = map.get(theatre);
-				if (curr.replace(key, oldValue, value)) {
-					System.out.println("OP: " + ops.get() +" | Changed seat " + key + " from " + 
-							oldValue + " to " + value);
-					result =  true;
-					ops.decrementAndGet();
-				}
+			mByteBuffer.clear();
 
-				if(ops.get() == 0) {
-					System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-					updateFileHash();
-					ops.set(NROPS);
-					//Files.delete(log.toPath());
-					logChannel.truncate(0);
-					//log.createNewFile();
-				}
-			} catch (IOException | BufferOverflowException e) {
+			curr = map.get(theatre);
+			if (curr.replace(key, oldValue, value)) {
+				System.out.println("OP: " + ops.get() +" | Changed seat " + key + " from " + 
+						oldValue + " to " + value);
+				result =  true;
+				ops.decrementAndGet();
+			}
 
-				e.printStackTrace();
-				result =  false;
+			if(ops.get() == 0) {
+				System.err.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+				updateFileHash();
+				ops.set(NROPS);
+				//Files.delete(log.toPath());
+				logChannel.truncate(0);
+				//log.createNewFile();
+			}
+		} catch (IOException | BufferOverflowException e) {
 
-			} /*finally {
+			e.printStackTrace();
+			result =  false;
+
+		} /*finally {
 			lock.unlock();
 		}*/
 
-			requests.incrementAndGet();
-			return result;
-		} else 
-			throw new RemoteException("Db Server down!");
+		requests.incrementAndGet();
+		return result;
 	}
 
 	public void printStatus(String theatre) throws RemoteException {
-		if(!down) {
-			ConcurrentHashMap<String,Status> curr = map.get(theatre);
-			System.out.println(curr.toString());		       
-		} else 
-			throw new RemoteException("Db Server down!");
+		ConcurrentHashMap<String,Status> curr = map.get(theatre);
 	}
 
 	public List<String> listTheatres() throws RemoteException {
-		if(!down) {
-			List<String> result = new ArrayList<String>();
-			for (int j = range[0]; j <= range[1]; j++) 
-				result.add(String.valueOf(j));
+		List<String> result = new ArrayList<String>();
+		for (int j = range[0]; j <= range[1]; j++) 
+			result.add(String.valueOf(j));
 
-			requests.incrementAndGet();
-			return result;
-		} else 
-			throw new RemoteException("Db Server down!");
+		requests.incrementAndGet();
+		return result;
 	}
 
 	public ConcurrentHashMap<String,Status> listSeats(String theatre) throws RemoteException {
@@ -234,7 +225,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		int o = last-numOfTheatresPerDB+1;
 		for(int k = o; k <= last; k++) {
 			curr = new ConcurrentHashMap<String,Status>(NRCL * NRRW);
-			
+
 			if(k == 1500)
 				System.out.println("ddd");
 			for(int i = 0; i < NRRW; i++)
@@ -246,12 +237,9 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public void fullTheatre(String theatre) throws RemoteException {
-		if(!down) {
-			ConcurrentHashMap<String,Status> curr = map.get(theatre);
-			curr.replaceAll((k, v) -> Status.OCCUPIED);
-			System.out.println("Done");
-		} else 
-			throw new RemoteException("Db Server down!");
+		ConcurrentHashMap<String,Status> curr = map.get(theatre);
+		curr.replaceAll((k, v) -> Status.OCCUPIED);
+		System.out.println("Done");
 	}
 
 	private void updateFileHash() {
@@ -262,7 +250,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	@Override
 	public String get(String theatre) throws RemoteException {
 		try {
-		if(!down) {
 			System.out.println("Theatre: " + theatre);
 			ConcurrentHashMap<String,Status> curr = map.get(theatre);
 			return curr.search(1, (k, v) -> {
@@ -270,8 +257,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 					return k; 
 				return null;
 			});
-		} else 
-			throw new RemoteException("Db Server down!");
 		} catch(Exception e) {
 			System.out.println(theatre);
 			e.printStackTrace();
@@ -279,38 +264,14 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		}
 	}
 
-	public void crash() throws RemoteException {
-		down = true;
-	}
-
-	public void reset() throws RemoteException {
-		down = false;
-	}
-
-	public int getRate() throws RemoteException {
-		if(!down) {
-			int res1= 0;
-			int res2 = 0;
-			try {
-				res1 = requests.get();
-				Thread.sleep(1000);
-				res2 = requests.get();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			return  (res2-res1);
-		} else 
-			throw new RemoteException("Db Server down!");
-	}
-	
 	public void updateSecondary (int numOfTheatresPerDB, int rangeMin, int rangeMax) throws RemoteException{
 		System.out.println("My Theatres: " + rangeMin +" to " + rangeMax + "\n");
 		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : map.entrySet()) {
-		    String key = entry.getKey();
-		    ConcurrentHashMap<String,Status> value = entry.getValue();
-		    if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
-		    	map.remove(key);
-		    }
+			String key = entry.getKey();
+			ConcurrentHashMap<String,Status> value = entry.getValue();
+			if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
+				map.remove(key);
+			}
 		}
 	}
 
@@ -319,17 +280,17 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		// range[0] old min
 		// range [1] old max
 
-		
+
 		System.out.println("My Theatres: " + rangeMin +" to " + rangeMax + "\n");
 		ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> mapSend = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>();
 
 		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : map.entrySet()) {
-		    String key = entry.getKey();
-		    ConcurrentHashMap<String,Status> value = entry.getValue();
-		    if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
-		    	mapSend.put(key, value);
-		    	map.remove(key);
-		    }
+			String key = entry.getKey();
+			ConcurrentHashMap<String,Status> value = entry.getValue();
+			if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
+				mapSend.put(key, value);
+				map.remove(key);
+			}
 		}
 
 		try {
@@ -343,17 +304,37 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		range [0] = rangeMin;
 		range[1] = rangeMax;
 		secondaryServer.updateSecondary(numOfTheatresPerDB, rangeMin, rangeMax);
-		
+
 	}
 
 	@Override
 	public void sendValues(ConcurrentHashMap<String, ConcurrentHashMap<String, Status>> mapSend) throws RemoteException {
 		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : mapSend.entrySet()) {
-		    String key = entry.getKey();
-		    ConcurrentHashMap<String,Status> value = entry.getValue();
-		    map.put(key, value);
+			String key = entry.getKey();
+			ConcurrentHashMap<String,Status> value = entry.getValue();
+			map.put(key, value);
 		}
 		secondaryServer.sendValues(mapSend);
+	}
+
+	public class Rate extends Thread {
+
+		public void run() {
+			while(true) {
+				try {
+					int res1 = requests.get();
+					Thread.sleep(1000);
+					int res2 = 0;
+					res2 = requests.get();
+					System.out.println("Serving " + (res2-res1) + "req/sec");
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+
+		}
+
 	}
 
 
