@@ -417,7 +417,7 @@ public class ZKClient {
 						if(first) {
 							if(event.getType().equals(Watcher.Event.EventType.NodeChildrenChanged) 
 									&& !event.getState().equals(KeeperState.Expired) && 
-									!event.getClass().equals(KeeperState.Disconnected))
+									!event.getState().equals(KeeperState.Disconnected))
 								queue.put("");
 						}
 
