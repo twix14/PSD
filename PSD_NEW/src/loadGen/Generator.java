@@ -46,7 +46,7 @@ public class Generator {
 	private ILoadBalancer lb;
 	public ZKClient zk;
 
-	private static final int ratePS = 500;
+	private static final int ratePS = 165;
 
 	private static final int NRCL = 100000;
 
@@ -750,7 +750,7 @@ public class Generator {
 			long lat = avglatency.get();
 			System.out.println("Avg latency - " + lat/((res2-res1)+1));
 			avglatency.set(0);
-			System.out.println("Load Generator rate - " + (res2-res1));
+			System.out.println("Load Generator rate - " + (res2-res1)/duration);
 
 		}
 	}
