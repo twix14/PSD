@@ -10,10 +10,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
+import org.knowm.xchart.QuickChart;
+import org.knowm.xchart.SwingWrapper;
+import org.knowm.xchart.XYChart;
 
+import db.IWideBoxDB;
+import db.SwingWorkerRealTime;
 import zooKeeper.ZKClient;
 
 public class LoadBalancerServer {
+	
+	private static LoadBalancerCharts mySwingWorker;
+	private static SwingWrapper<XYChart> sw;
+	private static XYChart chart;
 	
 	public static void main(String[] args) throws Exception {
 		new LoadBalancerServer(args);
@@ -50,6 +59,9 @@ public class LoadBalancerServer {
 			ILoadBalancer loadbalancer = new LoadBalancerImpl(zooKeeper, events);
 			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("LoadBalancer", loadbalancer);
+			
+			go(loadbalancer);
+			
 		} catch (RemoteException e) {
 			System.err.println("Error in getting registry");
 			e.printStackTrace();
@@ -59,5 +71,20 @@ public class LoadBalancerServer {
 		}
 		
 	}
+	
+	private static void go(ILoadBalancer lb) {
+
+	    // Create Chart
+	    chart = QuickChart.getChart("System Throughput", "Time(sec)", "Ops(sec)", "Throughput", new double[]{0}, new double[]{0});
+	    chart.getStyler().setLegendVisible(false);
+	    chart.getStyler().setXAxisTicksVisible(true);
+
+	    // Show it
+	    sw = new SwingWrapper<XYChart>(chart);
+	    sw.displayChart();
+
+	    mySwingWorker = new LoadBalancerCharts(sw, chart, lb);
+	    mySwingWorker.execute();
+	  }
 
 }

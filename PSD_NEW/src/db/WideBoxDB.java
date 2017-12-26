@@ -40,7 +40,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final long serialVersionUID = 1L;
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
-	private static final int NROPS = 3000;
+	private static final int NROPS = 6000;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;

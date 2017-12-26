@@ -12,6 +12,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import server.IWideBox;
 import server.Message;
@@ -32,6 +33,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 	private AtomicInteger primary;
 	private AtomicInteger requests;
+	private AtomicLong latency;
 
 	//Maximum operations with the current available app servers
 	private int startMax;
@@ -47,6 +49,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		serversClient = new LinkedList<>();
 		primary = new AtomicInteger(0);
 		requests = new AtomicInteger(0);
+		latency = new AtomicLong(0);
 		roundRobin = 0;
 
 		/*
@@ -95,14 +98,14 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		};
 
 		es.execute(task);
-		new Rate().start();
-
 		System.out.println("Ready to go!");
 	}
 
 	@Override
 	public Message requestSearch() throws RemoteException {
-
+		long lat1 = System.currentTimeMillis();
+		
+		
 		if(primary.get() == 0) {
 			System.out.println("I'm the primary!");
 			primary.incrementAndGet();
@@ -154,12 +157,16 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		
+		long lat2 = System.currentTimeMillis();
+		latency.addAndGet(lat2-lat1);
 
 		return result;
 	}
 
 	@Override
 	public Message requestSeatAvailable(int clientId, String theatre) throws RemoteException {
+		long lat1 = System.currentTimeMillis();
 		if(primary.get() == 0) {
 			System.out.println("I'm the primary!");
 			primary.incrementAndGet();
@@ -214,6 +221,9 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			e.printStackTrace();
 		}
 
+		long lat2 = System.currentTimeMillis();
+		latency.addAndGet(lat2-lat1);
+		
 		return result;
 	}
 
@@ -236,24 +246,16 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 					+ server2);
 		}
 	}
-
-	public class Rate extends Thread {
-
-		public void run() {
-			while(true) {
-				try {
-					int res1 = requests.get();
-					Thread.sleep(1000);
-					int res2 = 0;
-					res2 = requests.get();
-					System.out.println("Serving " + (res2-res1) + "req/sec");
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-
-		}
-
+	
+	public int getRequests() throws RemoteException {
+		int res = requests.get();
+		requests.set(0);
+		return res;
+	}
+	
+	public long getLatencty() throws RemoteException {
+		long res = latency.get();
+		latency.set(0);
+		return res;
 	}
 }

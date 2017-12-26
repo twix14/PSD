@@ -18,12 +18,6 @@ import org.knowm.xchart.XYChart;
 import utilities.Status;
 import zooKeeper.ZKClient;
 
-import javax.swing.SwingWorker;
-
-import org.knowm.xchart.QuickChart;
-import org.knowm.xchart.SwingWrapper;
-import org.knowm.xchart.XYChart;
-
 public class WideBoxDBServer {
 	
 	private static SwingWorkerRealTime mySwingWorker;
@@ -134,7 +128,7 @@ public class WideBoxDBServer {
 	    // Create Chart
 	    chart = QuickChart.getChart("DB stats", "Time(sec)", "Rate", "Rates", new double[]{0}, new double[]{0});
 	    chart.getStyler().setLegendVisible(false);
-	    chart.getStyler().setXAxisTicksVisible(false);
+	    chart.getStyler().setXAxisTicksVisible(true);
 
 	    // Show it
 	    sw = new SwingWrapper<XYChart>(chart);
