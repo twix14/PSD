@@ -92,8 +92,7 @@ public class Generator {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-
+		
 		if(!lbs.isEmpty()) {
 			lb = lbs.get(0);
 		} else {
@@ -305,7 +304,6 @@ public class Generator {
 
 				if(lbs.contains(lb)) {
 					lbs.remove(0);
-
 				}
 
 				try {

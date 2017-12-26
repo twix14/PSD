@@ -95,7 +95,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 					+ ip);
 			i++;
 		}
-		String[] split2 = ips.get(0).getKey().split(":");
+
 		div = numberOfTheatres/servers.size();
 		max = numberOfTheatres/servers.size() * ips.size();
 
@@ -152,7 +152,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				}
 			}
 		};
-
+		
 		ex.execute(task2);
 
 		Runnable task = () -> {

@@ -13,6 +13,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+
 import server.IWideBox;
 import server.Message;
 import zooKeeper.ZKClient;
@@ -72,27 +75,27 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		startMax = ips.size()*1000;
 		
 		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
-				
-				Runnable task = () -> {
-					while(true) {
-						if(!events.isEmpty()) {
-							String we = null;
-							try {
-								we = events.take();
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
 		
-							//AppServer offline
-							System.out.println("App Server died, removing it from appServers list...");
-							int index = serversClient.indexOf(we);
-							serversClient.remove(index);
-							servers.remove(index);
-						}
+		Runnable task = () -> {
+			while(true) {
+				if(!events.isEmpty()) {
+					String we = null;
+					try {
+						we = events.take();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
 					}
-				};
-		
-				es.execute(task);
+
+					//AppServer offline
+					System.out.println("App Server died, removing it from appServers list...");
+					int index = serversClient.indexOf(we);
+					serversClient.remove(index);
+					servers.remove(index);
+				}
+			}
+		};
+
+		es.execute(task);
 
 		System.out.println("Ready to go!");
 	}

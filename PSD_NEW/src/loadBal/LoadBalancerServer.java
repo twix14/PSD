@@ -31,9 +31,9 @@ public class LoadBalancerServer {
 			//get the zookeeper client
 			ZKClient zooKeeper = null;
 			BlockingQueue<String> events =  new LinkedBlockingQueue<String>();
-			
 			try {
 				zooKeeper = new ZKClient(args[2], new LinkedBlockingQueue<WatchedEvent>());
+				zooKeeper.setQueue(events);
 				System.out.println("Connected to ZooKeeper");
 				zooKeeper.setQueue(events);
 			} catch (IOException e1) {
