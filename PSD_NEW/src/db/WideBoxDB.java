@@ -87,8 +87,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		fileHash = new File("theatres.txt");
 
 		this.primary = primary;
-		requests = new AtomicInteger(0);
-
 		try {
 			fileHash.createNewFile();
 			if (log.createNewFile())
@@ -101,7 +99,6 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			System.out.println("Log file already exists.");
 			e.printStackTrace();
 		}
-		new Rate().start();
 	}
 
 	public boolean connectToSecondary(String ip, int port) throws RemoteException{
@@ -317,25 +314,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		secondaryServer.sendValues(mapSend);
 	}
 
-	public class Rate extends Thread {
-
-		public void run() {
-			while(true) {
-				try {
-					int res1 = requests.get();
-					Thread.sleep(1000);
-					int res2 = 0;
-					res2 = requests.get();
-					System.out.println("Serving " + (res2-res1) + "req/sec");
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-
-		}
-
+	public int getRequests() throws RemoteException {
+		return requests.get();
 	}
-
-
 }

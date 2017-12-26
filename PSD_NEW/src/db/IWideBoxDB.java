@@ -25,9 +25,12 @@ public interface IWideBoxDB extends Remote {
 	public boolean ping() throws RemoteException;
 	
 	public boolean connectToSecondary(String ip, int port) throws RemoteException;
+	
 	public void updateSecondary (int numOfTheatresPerDB, int rangeMin, int rangeMax) throws RemoteException;
 
 	public void newRange(int numOfTheatresPerDB, int rangeMin, int rangeMax, String[] split) throws RemoteException;
 
 	public void sendValues(ConcurrentHashMap<String, ConcurrentHashMap<String, Status>> mapSend) throws RemoteException;
+	
+	public int getRequests() throws RemoteException;
 }

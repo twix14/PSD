@@ -46,7 +46,7 @@ public class Generator {
 	private ILoadBalancer lb;
 	public ZKClient zk;
 
-	private static final int ratePS = 165;
+	private static final int ratePS = 500;
 
 	private static final int NRCL = 100000;
 

@@ -11,11 +11,24 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
+import org.knowm.xchart.QuickChart;
+import org.knowm.xchart.SwingWrapper;
+import org.knowm.xchart.XYChart;
 
 import utilities.Status;
 import zooKeeper.ZKClient;
 
+import javax.swing.SwingWorker;
+
+import org.knowm.xchart.QuickChart;
+import org.knowm.xchart.SwingWrapper;
+import org.knowm.xchart.XYChart;
+
 public class WideBoxDBServer {
+	
+	private static SwingWorkerRealTime mySwingWorker;
+	private static SwingWrapper<XYChart> sw;
+	private static XYChart chart;
 		
 	public static void main(String[] args) throws Exception {
 
@@ -23,12 +36,12 @@ public class WideBoxDBServer {
 		ZKClient zooKeeper = null;
 		IWideBoxDB primaryServer;
 		
+		
 		//args[0] DBServer IP
 		//args[1] DBServer port
 		//args[2] zooKeeper IP
 		//args[3] numberOfTheatres
-		//args[4] numberDBs
-		//args[5] P/S (Primary/Secondary)
+		//args[4] P/S (Primary/Secondary)
 		
 		try {
 			System.setProperty("java.rmi.server.hostname", args[0]);
@@ -72,6 +85,8 @@ public class WideBoxDBServer {
 				primaryServer = null;
 			}
 			
+		    go(db);
+			
 			System.out.println("DB loaded\n");
 			System.out.println("Commands:");
 			System.out.println("-->'print db n-theatre' command to print status of a theatre");
@@ -113,5 +128,20 @@ public class WideBoxDBServer {
 		
 
 	}
+	
+	private static void go(IWideBoxDB db) {
+
+	    // Create Chart
+	    chart = QuickChart.getChart("DB stats", "Time(sec)", "Rate", "Rates", new double[]{0}, new double[]{0});
+	    chart.getStyler().setLegendVisible(false);
+	    chart.getStyler().setXAxisTicksVisible(false);
+
+	    // Show it
+	    sw = new SwingWrapper<XYChart>(chart);
+	    sw.displayChart();
+
+	    mySwingWorker = new SwingWorkerRealTime(sw, chart, db);
+	    mySwingWorker.execute();
+	  }
 
 }
