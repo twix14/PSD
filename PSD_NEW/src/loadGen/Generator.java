@@ -293,7 +293,6 @@ public class Generator {
 	public void starOpWithoutRate(ILoadBalancer lb, String[] args,
 			int op, String duration, int clientId, String theatre, ExecutorService es) {
 		try {
-			//new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = null;
@@ -343,7 +342,6 @@ public class Generator {
 	public void starOp(ILoadBalancer lb, int op, String duration,  String[] args,
 			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
-			//new AllAppServersRate(duration, args).start();
 			GenRate gr = new GenRate(Integer.parseInt(duration));
 
 			Message m = null;
@@ -754,110 +752,6 @@ public class Generator {
 			avglatency.set(0);
 			System.out.println("Load Generator rate - " + (res2-res1));
 
-		}
-	}
-
-	public class GetRateServer extends Thread{
-
-		private IWideBox server;
-		private int duration;
-		private int id;
-
-		public GetRateServer(int id, IWideBox server, int duration) {
-			this.server = server;
-			this.duration = duration;
-			this.id = id;
-		}
-
-		public void run() {
-
-			try {
-				server.startRate();
-				Thread.sleep(duration * 1000);
-				int rate = 0;
-				try {
-					rate = server.getRate(duration);
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-				System.out.println("App server-" + id + ", serving " + rate
-						+ " req/sec ");
-
-			} catch (InterruptedException | RemoteException e) {
-				e.printStackTrace();
-			}
-
-		}
-
-	}
-
-	public class AllAppServersRate extends Thread {
-
-		private ZKClient zooKeeper;
-		private String duration;
-
-		public AllAppServersRate(String duration, String[] args) {
-			this.duration = duration;
-			try {
-				zooKeeper = new ZKClient(args[0], new LinkedBlockingQueue<WatchedEvent>());
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			} catch (KeeperException e1) {
-				e1.printStackTrace();
-			} catch (InterruptedException e1) {
-				e1.printStackTrace();
-			}
-
-		}
-
-		public void run() {
-			List<String> ips = null;
-			ips = zooKeeper.getAllAppServerNodes();
-			int id = 1;
-			for(String ip: ips) {
-				String[] split = ip.split(":");
-
-				try {
-					IWideBox server = null;
-					Registry registry = LocateRegistry.getRegistry(split[0],
-							Integer.parseInt(split[1]));
-					server = (IWideBox) registry.lookup("WideBoxServer");
-					new GetRateServer(id, server, Integer.parseInt(this.duration)).start();
-				} catch (NotBoundException e) {
-					System.err.println("Problem connecting with AppServer"
-							+ "with Ip:Port-" + ip);
-					e.printStackTrace();
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-				id++;
-			}
-
-		}
-	}
-
-	public class DbServerRate implements Runnable {
-
-		private IWideBoxDB wbDB;
-		private volatile boolean keepGoing = true;
-
-		public DbServerRate(String duration, String[] args) {
-
-		}
-
-		public void run() {
-			while(keepGoing) {
-				try {
-					System.out.println("DB server, serving " + wbDB.getRate()
-					+ " req/sec ");
-				} catch (RemoteException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-
-		public void kill() {
-			keepGoing = false;
 		}
 	}
 

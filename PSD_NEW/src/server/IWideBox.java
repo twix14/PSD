@@ -27,8 +27,4 @@ public interface IWideBox extends Remote {
 	
 	public Message cancelSeat(Session ses) throws RemoteException;
 	
-	public int getRate(int duration) throws RemoteException;
-	
-	public void startRate() throws RemoteException;
-	
 }

@@ -19,12 +19,6 @@ public interface IWideBoxDB extends Remote {
 	public ConcurrentHashMap<String,Status> listSeats(String theatre) throws RemoteException;
 	
 	public void printStatus(String theatre) throws RemoteException;
-
-	public void crash() throws RemoteException;
-	
-	public void reset() throws RemoteException;
-	
-	public int getRate() throws RemoteException;
 	
 	public void fullTheatre(String theatre) throws RemoteException;
 	
