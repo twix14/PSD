@@ -6,6 +6,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
@@ -30,13 +31,16 @@ public class WideBoxServer {
 		//args[0] appServer IP
 		//args[1] appServer port
 		//args[2] zooKeeper IP
+		//args[3] number of theatre
 		
 		System.setProperty("java.rmi.server.hostname", args[0]);
 
 		try {
 			ZKClient zooKeeper = null;
+			BlockingQueue<String> queue = new LinkedBlockingQueue<String>();
 			try {
 				zooKeeper = new ZKClient(args[2], new LinkedBlockingQueue<WatchedEvent>());
+				zooKeeper.setQueue(queue);
 				System.out.println("Connected to ZooKeeper");
 			} catch (IOException e1) {
 				e1.printStackTrace();
@@ -45,7 +49,7 @@ public class WideBoxServer {
 			} catch (InterruptedException e1) {
 				e1.printStackTrace();
 			}
-			widebox = new WideBoxImpl(zooKeeper);
+			widebox = new WideBoxImpl(zooKeeper, queue, Integer.parseInt(args[3]));
 			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("WideBoxServer", widebox);
 			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");

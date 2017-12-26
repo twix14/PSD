@@ -8,7 +8,9 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -51,15 +53,16 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	private int res1;
 
-	public WideBoxImpl(ZKClient zooKeeper) throws RemoteException {
+	public WideBoxImpl(ZKClient zooKeeper, BlockingQueue<String> queue, int numberOfTheatres) throws RemoteException {
 		this.zooKeeper = zooKeeper;
 		//ver params iniciais
 		requests = new AtomicInteger();
 		this.sessions = new ConcurrentHashMap<String,Long>();
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+		ExecutorService ex = Executors.newSingleThreadExecutor();
 
 		//get all ips and remote appserver objects
-		List<Pair<String, String>> ips = this.zooKeeper.getAllDBNodesPairs();
+		List<Pair<String, String>> ips = this.zooKeeper.getAllDBNodesPairs(true);
 		servers = new LinkedList<>();
 		ups = new LinkedList<>();
 
@@ -93,8 +96,64 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			i++;
 		}
 		String[] split2 = ips.get(0).getKey().split(":");
-		div = Integer.parseInt(split2[2]);
-		max = Integer.parseInt(split2[2]) * ips.size();
+		div = numberOfTheatres/servers.size();
+		max = numberOfTheatres/servers.size() * ips.size();
+
+		Runnable task2 = () -> {
+			int j = 0;
+			while(true) {
+				if(!queue.isEmpty()) {
+					String s = null;
+					try {
+						s = queue.take();
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					} 
+					if (s.contains("down")){
+						System.out.println("DBServer died, removing it from DBServers list...");
+						String[] split = s.split(":");
+						ups.set((int)Integer.valueOf(split[0]), new Pair<Boolean, Integer>(false, (int)Integer.valueOf(split[0])));
+					}else {
+						List<Pair<String, String>> dbs = zooKeeper.getAllDBNodesPairs(true);
+						if(j % 2 != 0){
+
+							Pair<String, String> ip = dbs.get(dbs.size()-1);
+
+							try{
+								String[] splitPrim = ip.getKey().split(":");
+								String[] splitSec = ip.getValue().split(":");
+								Registry registryPrim = LocateRegistry.getRegistry(splitPrim[0],
+										Integer.parseInt(splitPrim[1]));
+								Registry registrySec = LocateRegistry.getRegistry(splitSec[0],
+										Integer.parseInt(splitSec[1]));
+								IWideBoxDB serverPrim = null;
+								IWideBoxDB serverSec = null;
+								try {
+									serverPrim = (IWideBoxDB) registryPrim.lookup("WideBoxDBServer");
+									serverSec = (IWideBoxDB) registrySec.lookup("WideBoxDBServer");
+									servers.add(new Pair<IWideBoxDB,IWideBoxDB>(serverPrim, serverSec));
+									ups.add(new Pair<Boolean, Integer>(true, dbs.size()-1));
+								} catch (NotBoundException e) {
+									System.err.println("Problem connecting with DBServer"
+											+ "with Ip:Port-" + ip);
+									e.printStackTrace();
+								}
+								System.out.println("DBServer added Ip:Port-"
+										+ ip);
+							} catch (RemoteException e1) {
+								e1.printStackTrace();
+							}
+
+							div = div/2;
+						} 
+						j++;
+					}
+
+				}
+			}
+		};
+
+		ex.execute(task2);
 
 		Runnable task = () -> {
 			sessions.forEach((k, v) -> {
@@ -275,7 +334,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				ups.set(pos, new Pair<Boolean, Integer>(false, pos));
 				return new Message("Retry");
 			}
-			
+
 
 			if (result)
 				m = new Message(Message.ACCEPT_OK);
@@ -401,7 +460,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				ups.set(pos, new Pair<Boolean, Integer>(false, pos));
 				return new Message("Retry");
 			}
-			
+
 
 			if (result)
 				m = new Message(Message.CANCEL_OK);

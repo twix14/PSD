@@ -5,6 +5,7 @@ import java.lang.management.ManagementFactory;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.KeeperException;
@@ -29,9 +30,12 @@ public class LoadBalancerServer {
 		try {
 			//get the zookeeper client
 			ZKClient zooKeeper = null;
+			BlockingQueue<String> events =  new LinkedBlockingQueue<String>();
+			
 			try {
 				zooKeeper = new ZKClient(args[2], new LinkedBlockingQueue<WatchedEvent>());
 				System.out.println("Connected to ZooKeeper");
+				zooKeeper.setQueue(events);
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			} catch (KeeperException e1) {
@@ -43,7 +47,7 @@ public class LoadBalancerServer {
 			zooKeeper.createLBNode(args[0], args[1], pid[0]);
 			
 			System.setProperty("java.rmi.server.hostname", args[0]);
-			ILoadBalancer loadbalancer = new LoadBalancerImpl(zooKeeper);
+			ILoadBalancer loadbalancer = new LoadBalancerImpl(zooKeeper, events);
 			Registry registry = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 			registry.rebind("LoadBalancer", loadbalancer);
 		} catch (RemoteException e) {

@@ -45,18 +45,24 @@ public class WideBoxDBServer {
 			System.out.println("Connected to ZooKeeper");
 			String[] pid =  ManagementFactory.getRuntimeMXBean().getName().split("@");
 			
-			int last = 0;
+			int [] range = null;
 			
-			if(args[5].equals("P")) {
-				last = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
+			if(args[4].equals("P")) {
+				range = zooKeeper.createDBNode(args[0], args[1], Integer.parseInt(args[3]),
 					pid[0]);
-				db = new WideBoxDB(last, (Integer.parseInt(args[3])/Integer.parseInt(args[4])), true);
+				db = new WideBoxDB(range, true);
 				Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 				registry2.rebind("WideBoxDBServer", db);
 			} else {
-				String[] temp = zooKeeper.createSecondaryDBNode(args[0], args[1], Integer.parseInt(args[3]), Integer.parseInt(args[4]),
+				String[] temp = zooKeeper.createSecondaryDBNode(args[0], args[1], Integer.parseInt(args[3]),
 						pid[0]);
-				db = new WideBoxDB(Integer.parseInt(temp[0]), (Integer.parseInt(args[3])/Integer.parseInt(args[4])), false);
+				//TODO
+				int [] rangeS = new int [3];
+				rangeS [0] = Integer.parseInt(temp[0]) - Integer.parseInt(temp[3]) + 1;
+				rangeS [1] = Integer.parseInt(temp[0]);
+				rangeS [2] = Integer.parseInt(temp[3]);
+				
+				db = new WideBoxDB(rangeS, false);
 				Registry registry2 = LocateRegistry.createRegistry(Integer.parseInt(args[1]));
 				registry2.rebind("WideBoxDBServer", db);
 				

@@ -70,14 +70,13 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private boolean primary = false;
 	private boolean secondaryUp = false;
 
-	protected WideBoxDB(int last, int numOfTheatresPerDB, boolean primary) throws RemoteException {
+	protected WideBoxDB(int [] range2, boolean primary) throws RemoteException {
 		super();
-		loadDB(last, numOfTheatresPerDB);
+		loadDB(range2[1], range2[2]);
 		down = false;
-		
 		range = new int[2];
-		range[0] = last-numOfTheatresPerDB+1;
-		range[1] = last;
+		range [0] = range2[0];
+		range[1] = range2[1];
 		
 		es = Executors.newSingleThreadExecutor();
 
@@ -302,6 +301,59 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 			return  (res2-res1);
 		} else 
 			throw new RemoteException("Db Server down!");
+	}
+	
+	public void updateSecondary (int numOfTheatresPerDB, int rangeMin, int rangeMax) throws RemoteException{
+		System.out.println("My Theatres: " + rangeMin +" to " + rangeMax + "\n");
+		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : map.entrySet()) {
+		    String key = entry.getKey();
+		    ConcurrentHashMap<String,Status> value = entry.getValue();
+		    if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
+		    	map.remove(key);
+		    }
+		}
+	}
+
+	@Override
+	public void newRange(int numOfTheatresPerDB, int rangeMin, int rangeMax, String[] split) throws RemoteException {
+		// range[0] old min
+		// range [1] old max
+
+		
+		System.out.println("My Theatres: " + rangeMin +" to " + rangeMax + "\n");
+		ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> mapSend = new ConcurrentHashMap<String, ConcurrentHashMap<String,Status>>();
+
+		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : map.entrySet()) {
+		    String key = entry.getKey();
+		    ConcurrentHashMap<String,Status> value = entry.getValue();
+		    if(rangeMax < Integer.parseInt(key) && Integer.parseInt(key) <= range[1]) {
+		    	mapSend.put(key, value);
+		    	map.remove(key);
+		    }
+		}
+
+		try {
+			Registry reg = LocateRegistry.getRegistry(split[0], 
+					Integer.parseInt(split[1]));
+
+			IWideBoxDB db = (IWideBoxDB) reg.lookup("WideBoxDBServer");
+			db.sendValues(mapSend);
+		} catch (Exception e) {
+		}
+		range [0] = rangeMin;
+		range[1] = rangeMax;
+		secondaryServer.updateSecondary(numOfTheatresPerDB, rangeMin, rangeMax);
+		
+	}
+
+	@Override
+	public void sendValues(ConcurrentHashMap<String, ConcurrentHashMap<String, Status>> mapSend) throws RemoteException {
+		for(Map.Entry<String, ConcurrentHashMap<String,Status>> entry : mapSend.entrySet()) {
+		    String key = entry.getKey();
+		    ConcurrentHashMap<String,Status> value = entry.getValue();
+		    map.put(key, value);
+		}
+		secondaryServer.sendValues(mapSend);
 	}
 
 
