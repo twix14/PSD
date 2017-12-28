@@ -46,7 +46,7 @@ public class Generator {
 	private ILoadBalancer lb;
 	public ZKClient zk;
 
-	private static final int ratePS = 165;
+	private static final int ratePS = 27;
 
 	private static final int NRCL = 100000;
 
@@ -118,8 +118,8 @@ public class Generator {
 					//LoadBalancer offline
 					if(we.getType().equals(Watcher.Event.EventType.NodeDeleted)) {
 						lbs.remove(0);
-						lb = lbs.get(0);
 						System.out.println("Primary load balancer died");
+						lb = lbs.get(0);
 					} else if (we.getType().equals(Watcher.Event.EventType.NodeChildrenChanged)) { 
 						//LoadBalancer back online, since the children
 						List<String> lbNodes = zk.getAllLBNodes();
@@ -586,6 +586,7 @@ public class Generator {
 			else if(m2.getStatus().equals(Message.BUSY)) {
 				System.out.println("The system is busy!");
 			}
+			
 		}
 
 		private void query (int clientId, String theatre, Message m2, boolean search) {
@@ -750,6 +751,7 @@ public class Generator {
 			long lat = avglatency.get();
 			System.out.println("Avg latency - " + lat/((res2-res1)+1));
 			avglatency.set(0);
+			System.out.println("Total - " + (res2-res1));
 			System.out.println("Load Generator rate - " + (res2-res1)/duration);
 
 		}

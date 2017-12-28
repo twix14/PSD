@@ -19,7 +19,7 @@ public class FailureGenerator {
 				String s = sc.nextLine();
 				String[] ipPort = s.split(" ");
 				//PORT OF FAILURE GENERATOR IS ALWAYS 5010
-				registry = LocateRegistry.getRegistry(ipPort[0], 5010);
+				registry = LocateRegistry.getRegistry(ipPort[0], 5030);
 				IFailureGen fg = (IFailureGen) registry.lookup("FailureGenerator");
 				
 				if(ipPort[2].equals("0")) {

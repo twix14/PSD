@@ -5,7 +5,9 @@ import java.rmi.NotBoundException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.InitialContext;
@@ -15,6 +17,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.zookeeper.WatchedEvent;
+
 import client.controller.web.inputController.actions.Action;
 import client.controller.web.inputController.actions.ChooseSeatAction;
 import client.controller.web.inputController.actions.QueryTheatreAction;
@@ -23,7 +27,7 @@ import client.controller.web.inputController.actions.UnknownAction;
 import loadBal.ILoadBalancer;
 import server.IWideBox;
 import utilities.Cache;
-import zooKeeper.IZKClient;
+import zooKeeper.ZKClient;
 
 
 /**
@@ -70,15 +74,14 @@ import zooKeeper.IZKClient;
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
-	private static final String ZOOKEEPER_PORT = "5003";
-	private static final String ZOOKEEPER_IP = "10.101.148.59";
+	private static final String MY_IP = "10.101.148.86";
 
 	private static AtomicInteger serialClient;
 	public static Cache cache;
 
 	static final String ACTION_PATH = "/action";
 	private InitialContext context;
-	private static IZKClient zk;
+	private static ZKClient zk;
 	private static List<ILoadBalancer> lbs;
 	private static IWideBox server;
 
@@ -154,6 +157,7 @@ public class FrontController extends HttpServlet {
 	@Override
 	public void init() {
 		cache = new Cache();
+		lbs = new LinkedList<>();
 		actionHandlers = new HashMap<>();
 		actionHandlers.put("unknownAction", "java:module/UnknownAction");
 		actionHandlers.put("searchTheatres", "java:module/SearchTheatresAction");
@@ -162,14 +166,12 @@ public class FrontController extends HttpServlet {
 		serialClient = new AtomicInteger();
 		try {
 			context = new InitialContext();
-			Registry registry = LocateRegistry.getRegistry(ZOOKEEPER_IP, 
-					Integer.parseInt(ZOOKEEPER_PORT));
-			zk = (IZKClient) registry.lookup("ZooKeeperServer");
+			zk = new ZKClient(MY_IP, new LinkedBlockingQueue<WatchedEvent>());
 
 			List<String> lbsZK = zk.getAllLBNodes();
 			for(String s : lbsZK){
 				String[] split = s.split(":");
-				registry = LocateRegistry.getRegistry(split[0],
+				Registry registry = LocateRegistry.getRegistry(split[0],
 						Integer.parseInt(split[1]));
 				ILoadBalancer server = null;
 				try {

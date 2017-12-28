@@ -73,8 +73,8 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 			System.out.println("Connected to AppServer with Ip:Port-"
 					+ ip);
 		}
-		this.messages = new LinkedBlockingQueue<>(ips.size()*1000);
-		startMax = ips.size()*1000;
+		this.messages = new LinkedBlockingQueue<>(ips.size()*200);
+		startMax = ips.size()*200;
 
 		ScheduledExecutorService es = Executors.newSingleThreadScheduledExecutor();
 
