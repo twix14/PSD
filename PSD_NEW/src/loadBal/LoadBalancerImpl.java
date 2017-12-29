@@ -32,7 +32,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 	int roundRobin;
 
 	private AtomicInteger primary;
-	private AtomicInteger requests;
+	private int requests;
 	private AtomicLong latency;
 
 	//Maximum operations with the current available app servers
@@ -48,7 +48,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		servers = new LinkedList<>();
 		serversClient = new LinkedList<>();
 		primary = new AtomicInteger(0);
-		requests = new AtomicInteger(0);
+		requests = 0;
 		latency = new AtomicLong(0);
 		roundRobin = 0;
 
@@ -118,7 +118,6 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 		//change next server to be assigned
 		roundRobin++;
-		requests.incrementAndGet();
 
 		int serv = roundRobin % servers.size();
 		String s = serversClient.get(serv);
@@ -159,6 +158,8 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		}
 		
 		long lat2 = System.currentTimeMillis();
+		requests++;
+		System.out.println("Demorou search " + (lat2-lat1));
 		latency.addAndGet(lat2-lat1);
 
 		return result;
@@ -179,7 +180,6 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 
 		//change next server to be assigned
 		roundRobin++;
-		requests.incrementAndGet();
 
 		int serv = roundRobin % servers.size();
 		String s = serversClient.get(serv);
@@ -222,6 +222,8 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 		}
 
 		long lat2 = System.currentTimeMillis();
+		requests++;
+		System.out.println("Demorou requestSeat " + (lat2-lat1));
 		latency.addAndGet(lat2-lat1);
 		
 		return result;
@@ -248,8 +250,7 @@ public class LoadBalancerImpl  extends UnicastRemoteObject implements ILoadBalan
 	}
 	
 	public int getRequests() throws RemoteException {
-		int res = requests.get();
-		requests.set(0);
+		int res = requests;
 		return res;
 	}
 	

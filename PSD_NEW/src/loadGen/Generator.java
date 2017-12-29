@@ -37,8 +37,9 @@ public class Generator {
 	public static AtomicInteger rate;
 	public static AtomicInteger duration;
 
-	public static AtomicInteger requests;
-	public static AtomicLong avglatency;
+	public int requests;
+	public long avglatency;
+	public long t;
 
 	public Cache cache;
 
@@ -101,8 +102,9 @@ public class Generator {
 		}
 
 
-		requests = new AtomicInteger();
-		avglatency = new AtomicLong();
+		requests = 0;
+		avglatency = 0;
+		t = 1;
 		es = Executors.newSingleThreadScheduledExecutor();
 
 		Runnable task = () -> {
@@ -151,6 +153,8 @@ public class Generator {
 		cache = new Cache();
 
 		System.out.println("LOAD GENERATOR STARTED");
+		System.out.println("Comando do tipo: ORIGIN,TARGET,OPERATION,RATE,DURATION");
+		System.out.println("Comando----->");
 		while(true) {
 
 			try {
@@ -158,8 +162,6 @@ public class Generator {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			System.out.println("Comando do tipo: ORIGIN,TARGET,OPERATION,RATE,DURATION");
-			System.out.println("Comando----->");
 			String command = sc.nextLine();
 			String[] split = command.split(",");
 
@@ -293,11 +295,16 @@ public class Generator {
 	public void starOpWithoutRate(ILoadBalancer lb, String[] args,
 			int op, String duration, int clientId, String theatre, ExecutorService es) {
 		try {
-			GenRate gr = new GenRate(Integer.parseInt(duration));
+			ExecutorService ex = Executors.newCachedThreadPool();
+			int res1 = requests;
 
 			Message m = null;
 			try{
+				long t0 = System.currentTimeMillis();
 				m = lb.requestSearch();
+				requests++;
+				avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+			    ++t;
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
 
@@ -313,7 +320,11 @@ public class Generator {
 				}
 
 				try {
+					long t0 = System.currentTimeMillis();
 					m = lb.requestSearch();
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
 				} catch (ConnectException e1) {
 					System.out.println("System is offline");
 					System.exit(0);
@@ -321,19 +332,20 @@ public class Generator {
 			}
 
 			Gen g = new Gen(lb, m, op, clientId, theatre);
-			//es.execute(g);
-			g.start();
+			ex.execute(g);
 
 
 			//es.execute(app);
 			//es.execute(db);
-			//es.execute(gr);
-			gr.start();
 
 			Thread.sleep(Integer.parseInt(duration) * 1000);
 			//app.kill();
 			//db.kill();
 			g.kill();
+			
+			ex.shutdown();
+			if(ex.awaitTermination((Integer.parseInt(duration) + 5), TimeUnit.SECONDS))
+				new GenRate(Integer.parseInt(duration), res1).start();
 		} catch (NumberFormatException | InterruptedException | RemoteException e) {
 			e.printStackTrace();
 		} 
@@ -342,11 +354,15 @@ public class Generator {
 	public void starOp(ILoadBalancer lb, int op, String duration,  String[] args,
 			int numThreads, double lag, int clientId, String theatre, ExecutorService es) {
 		try {
-			GenRate gr = new GenRate(Integer.parseInt(duration));
-
+			ExecutorService ex = Executors.newCachedThreadPool();
+			int res1 = requests;
 			Message m = null;
 			try{
+				long t0 = System.currentTimeMillis();
 				m = lb.requestSearch();
+				requests++;
+				avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+			    ++t;
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
 
@@ -363,7 +379,11 @@ public class Generator {
 				}
 
 				try {
+					long t0 = System.currentTimeMillis();
 					m = lb.requestSearch();
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
 				} catch (ConnectException e1) {
 					System.out.println("System is offline");
 					System.exit(0);
@@ -375,22 +395,18 @@ public class Generator {
 			for(int i = 0; i < numThreads-1; i++) {
 				Gen g = new Gen(lb, m, op, clientId, theatre);
 				list.add(g);
-				g.start();
-				//es.execute(g);
+				ex.execute(g);
 			}
 			if(!(lag == 0)) {
 				Gen last = new Gen(lb, m, op, clientId, theatre);
-				//es.execute(last);
-				last.start();
+				ex.execute(last);
 				Delay d = new Delay(last, (int) lag * 1000);
-				//es.execute(d);
-				d.start();
+				ex.execute(d);
 			}
 
 
 			//es.execute(app);
 			//es.execute(db);
-			gr.start();
 			//es.execute(gr);
 
 			Thread.sleep(Integer.parseInt(duration) * 1000);
@@ -399,6 +415,10 @@ public class Generator {
 			for(int i = 0; i < numThreads-1; i++) {
 				list.get(i).kill();
 			}
+			
+			ex.shutdown();
+			if(ex.awaitTermination((Integer.parseInt(duration) + 5), TimeUnit.SECONDS))
+				new GenRate(Integer.parseInt(duration), res1).start();
 		} catch (NumberFormatException | InterruptedException | RemoteException e) {
 			e.printStackTrace();
 		} 
@@ -530,7 +550,11 @@ public class Generator {
 			Random rand = new Random();
 
 			try{
+				long t0 = System.currentTimeMillis();
 				m2 = lb.requestSeatAvailable(client, theatre);
+				requests++;
+				avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+			    ++t;
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
 
@@ -552,7 +576,11 @@ public class Generator {
 				}
 
 				try {
+					long t0 = System.currentTimeMillis();
 					m2 = lb.requestSeatAvailable(client, theatre);
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
 				} catch (RemoteException e1) {
 					System.out.println("System is offline");
 					System.exit(0);
@@ -565,11 +593,20 @@ public class Generator {
 
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
 				try {
+					long t0 = System.currentTimeMillis();
 					Message result = server.acceptSeat(ses);
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
+					
 					while(true) {
-						if(result.getStatus().equals("Retry"))
+						if(result.getStatus().equals("Retry")) {
+							t0 = System.currentTimeMillis();
 							result = server.acceptSeat(ses);
-						else 
+							requests++;
+							avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+						    ++t;
+						}else 
 							break;
 					}
 				} catch (RemoteException e) {
@@ -590,10 +627,13 @@ public class Generator {
 		}
 
 		private void query (int clientId, String theatre, Message m2, boolean search) {
-			long t0 = System.nanoTime();
 			//CONNECT WITH THE LOAD BALANCER AND WAIT FOR RESPONSE
 			try{
+				long t0 = System.currentTimeMillis();
 				m2 = lb.requestSeatAvailable(clientId, theatre);
+				requests++;
+				avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+			    ++t;
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
 
@@ -617,7 +657,11 @@ public class Generator {
 
 
 				try {
+					long t0 = System.currentTimeMillis();
 					m2 = lb.requestSeatAvailable(clientId, theatre);
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
 				} catch (RemoteException e1) {
 					System.out.println("System is offline");
 					System.exit(0);
@@ -630,11 +674,21 @@ public class Generator {
 				//REQUEST GOEST DIRECTLY TO THE APP SERVER THAT IS ASSIGNED
 				//TO THIS REQUEST!
 				try {
+					long t0 = System.currentTimeMillis();
 					Message result = server.cancelSeat(m2.getSession());
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
+					
+					
 					while(true) {
-						if(result.getStatus().equals("Retry"))
+						if(result.getStatus().equals("Retry")) {
+							t0 = System.currentTimeMillis();
 							result = server.cancelSeat(m2.getSession());
-						else 
+							requests++;
+							avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+						    ++t;
+						}else 
 							break;
 					}
 				} catch (RemoteException e) {
@@ -651,17 +705,17 @@ public class Generator {
 			else if(m2.getStatus().equals(Message.BUSY)) {
 				System.out.println("The system is busy!");
 			}
-			long t1 = System.nanoTime();
-			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-			requests.incrementAndGet();
 		}
 
 		private void purch(int clientId, String theatre, Message m2, 
 				Session ses, Random rand, boolean search) {
-			long t0 = System.nanoTime();
 			//CONNECT WITH THE LOAD BALANCER AND WAIT FOR A RESPONSE
 			try{
+				long t0 = System.currentTimeMillis();
 				m2 = lb.requestSeatAvailable(clientId, theatre);
+				avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+			    ++t;
+				requests++;
 			} catch (RemoteException e) {
 				System.err.println("Retrying connection...");
 
@@ -684,7 +738,11 @@ public class Generator {
 
 				try {
 
+					long t0 = System.currentTimeMillis();
 					m2 = lb.requestSeatAvailable(clientId, theatre);
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
+					requests++;
 				} catch (RemoteException e1) {
 					System.out.println("System is offline");
 					System.exit(0);
@@ -698,11 +756,20 @@ public class Generator {
 			//TO THIS REQUEST!
 			if(m2.getStatus().equals(Message.AVAILABLE)) {
 				try {
+					long t0 = System.currentTimeMillis();
 					Message result = server.acceptSeat(ses);
-
+					requests++;
+					avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+				    ++t;
+					
 					while(true) {
-						if(result.getStatus().equals("Retry"))
+						if(result.getStatus().equals("Retry")) {
+							t0 = System.currentTimeMillis();
 							result = server.acceptSeat(ses);
+							requests++;
+							avglatency += ((System.currentTimeMillis()-t0) - avglatency) / t;
+						    ++t;
+						}
 						else 
 							break;
 					}
@@ -721,9 +788,6 @@ public class Generator {
 			else if(m2.getStatus().equals(Message.BUSY)) {
 				System.out.println("The system is busy!");
 			}
-			long t1 = System.nanoTime();
-			avglatency.addAndGet(TimeUnit.NANOSECONDS.toMillis(t1-t0));
-			requests.incrementAndGet();
 		}
 
 		public void kill() {
@@ -734,25 +798,22 @@ public class Generator {
 	public class GenRate extends Thread {
 
 		private int duration;
+		private int res1;
 
-		public GenRate(int duration) {
+		public GenRate(int duration, int res1) {
 			this.duration = duration;
+			this.res1 = res1;
 		}
 
 		public void run() {
-			int res1 = requests.get();
-			try {
-				Thread.sleep(duration * 999);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			int res2 = requests.get();
-			long lat = avglatency.get();
-			System.out.println("Avg latency - " + lat/((res2-res1)+1));
-			avglatency.set(0);
+			int res2 = requests;
+			System.out.println("Avg latency - " + avglatency);
+			avglatency = 0;
+			t = 1;
 			System.out.println("Total - " + (res2-res1));
 			System.out.println("Load Generator rate - " + (res2-res1)/duration);
+			System.out.println("Comando do tipo: ORIGIN,TARGET,OPERATION,RATE,DURATION");
+			System.out.println("Comando----->");
 
 		}
 	}

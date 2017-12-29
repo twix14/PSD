@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -261,7 +262,6 @@ public class ZKClient {
 
 			} else {
 
-				int numOfTheatresPerDB = numberOfTheatres;
 				String ipPort = ip + ":" + port + ":" + pid + ":P"; 
 				//create group membership node
 				String node = zk.create(root, new byte[0], Ids.OPEN_ACL_UNSAFE,
@@ -433,23 +433,23 @@ public class ZKClient {
 			for(String s : children) {
 				count2=0;
 				final int j = i;
+				String ip1 = new String(zk.getData(root + "/" + s,false, null));
 				String ip = new String(zk.getData(root + "/" + s,new Watcher() {
 					//NODE DOWN!
 					public void process(WatchedEvent event) {
 						try {
-							if(event.getType().equals(Watcher.Event.EventType.NodeDeleted))
+							if(event.getType().equals(Watcher.Event.EventType.NodeDeleted) 
+									&& ip1.endsWith("P"))
 								queue.put(String.valueOf(j)+":down");
 						} catch (InterruptedException e) {
 							e.printStackTrace();
 						}
 					}
 				}, null));
-				String[] split1 = ip.split(":");
 				if (ip.endsWith("P")) {
 
 					for(String s1 : children) {
 						String ip2 = new String(zk.getData(root + "/" + s1, false, null));
-						String[] split2 = ip.split(":");
 						if(ip2.endsWith("S")  ) {
 							if(count == count2) {
 								result.add(new Pair<String, String>(ip, ip2));

@@ -204,6 +204,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 
 	@Override
 	public Message search() throws RemoteException {
+		long start = System.currentTimeMillis();
 		Message m = null;
 		requests.incrementAndGet();
 		m = new Message(Message.THEATRES);
@@ -225,11 +226,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			}			
 		}
 		m.setTheatres(theatresList);
+		System.out.println("Demorou search " + (System.currentTimeMillis()-start));
 		return m;
 	}
 
 	@Override
 	public Message seatsAvailable(int clientId, String theatre) throws RemoteException {
+		long start = System.currentTimeMillis();
 		String seat = null;
 		boolean result = false;
 		Message response = null;
@@ -291,11 +294,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 			ups.set(pos, new Pair<Boolean, Integer>(false, pos));
 			return new Message("Retry");
 		}
+		System.out.println("Demorou seatsAvail " + (System.currentTimeMillis()-start));
 		return response;
 	}
 
 	@Override
 	public Message acceptSeat(Session ses) throws RemoteException {
+		long start = System.currentTimeMillis();
 		Message m = null;
 		boolean result = false;
 		Long exists = null;
@@ -342,11 +347,13 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		} else 
 			m = new Message(Message.ACCEPT_ERROR);
 		requests.incrementAndGet();
+		System.out.println("Demorou accept " + (System.currentTimeMillis()-start));
 		return m;	
 	}
 
 	@Override
 	public Message reserveNewSeat(Session ses, String result) throws RemoteException {
+		long start = System.currentTimeMillis();
 		Long t = sessions.get(Integer.toString(ses.getId()) + "-" + ses.getTheatre() + "-" + ses.getSeat());
 		Message m = null;
 		boolean res2 = false;
@@ -415,12 +422,14 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		} finally {
 			lock.unlock();
 		}
+		System.out.println("Demorou new " + (System.currentTimeMillis()-start));
 		requests.incrementAndGet();
 		return m;
 	}
 
 	@Override
 	public Message cancelSeat(Session ses) throws RemoteException {
+		long start = System.currentTimeMillis();
 		Message m = null;
 		boolean result = false;
 		Long exists = null;
@@ -451,6 +460,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				wideboxDBStub = servers.get(pos).getValue();
 		}
 		if (exists != null) {
+			long t0 = System.currentTimeMillis();
 			try {
 				result = wideboxDBStub.put(ses.getTheatre(), ses.getSeat(), Status.FREE, Status.RESERVED);
 			} catch (RemoteException e) {
@@ -458,7 +468,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 				ups.set(pos, new Pair<Boolean, Integer>(false, pos));
 				return new Message("Retry");
 			}
-
+			System.out.println("Demorou DB " + (System.currentTimeMillis()-t0));
 
 			if (result)
 				m = new Message(Message.CANCEL_OK);
@@ -468,6 +478,7 @@ public class WideBoxImpl extends UnicastRemoteObject implements IWideBox {
 		} else 
 			m = new Message(Message.CANCEL_ERROR);
 		requests.incrementAndGet();
+		System.out.println("Demorou cancel " + (System.currentTimeMillis()-start));
 		return m;
 	}
 	

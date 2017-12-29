@@ -41,6 +41,8 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	private static final int NRRW = 26;
 	private static final int NRCL = 40;
 	private static final int NROPS = 6000;
+	
+	private int sec;
 
 	private ConcurrentHashMap<String, ConcurrentHashMap<String,Status>> map;	
 	private File log;
@@ -74,6 +76,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		super();
 		loadDB(range2[1], range2[2]);
 		down = false;
+		sec = 0;
 		range = new int[2];
 		range [0] = range2[0];
 		range[1] = range2[1];
@@ -135,6 +138,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 	}
 
 	public boolean put(String theatre, String key, Status value, Status oldValue) throws RemoteException {
+		long start = System.currentTimeMillis();
 		if (primary && secondaryUp && secondaryServer != null) {
 			try {
 				secondaryServer.put(theatre, key, value, oldValue);
@@ -142,28 +146,36 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 				secondaryUp = false;
 				System.out.println("Secondary is down");
 			}
-
+			System.out.println("Demorou secundario " + (System.currentTimeMillis()-start));
+			System.out.println("Pedidos sec " + sec++);
 		}
 		boolean result = false;
 		ConcurrentHashMap<String,Status> curr = null;
 		String linha = null;
 		try {
+			long esc = System.currentTimeMillis();
 
-			//lock.lock();
-			ByteBuffer mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
+			try {
+				lock.lock();
+				ByteBuffer mByteBuffer = ByteBuffer.allocate(BUFFER_SIZE);
 
-			linha = theatre + "," + key + "," + value + "," + oldValue;
-			mByteBuffer.put(linha.getBytes());
-			mByteBuffer.put(LINE_SEPARATOR.getBytes());
-			mByteBuffer.flip();
+				linha = theatre + "," + key + "," + value + "," + oldValue;
+				mByteBuffer.put(linha.getBytes());
+				mByteBuffer.put(LINE_SEPARATOR.getBytes());
+				mByteBuffer.flip();
 
-			while (mByteBuffer.hasRemaining())
-				logChannel.write(mByteBuffer);
+				while (mByteBuffer.hasRemaining())
+					logChannel.write(mByteBuffer);
 
-			logChannel.force(true);
-			fos.getFD().sync();
+				logChannel.force(true);
+				fos.getFD().sync();
 
-			mByteBuffer.clear();
+				mByteBuffer.clear();
+			}finally {
+				lock.unlock();
+				System.out.println("Demorou escrita " + (System.currentTimeMillis()-esc));
+			}
+
 
 			curr = map.get(theatre);
 			if (curr.replace(key, oldValue, value)) {
@@ -191,6 +203,7 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 		}*/
 
 		requests.incrementAndGet();
+		System.out.println("Demorou put " + (System.currentTimeMillis()-start));
 		return result;
 	}
 
@@ -246,12 +259,15 @@ public class WideBoxDB extends UnicastRemoteObject implements IWideBoxDB {
 
 	@Override
 	public String get(String theatre) throws RemoteException {
+		long start = System.currentTimeMillis();
 		try {
 			System.out.println("Theatre: " + theatre);
 			ConcurrentHashMap<String,Status> curr = map.get(theatre);
 			return curr.search(1, (k, v) -> {
-				if (v.equals(Status.FREE))
-					return k; 
+				if (v.equals(Status.FREE)) {
+					System.out.println("Demorou get " + (System.currentTimeMillis()-start));
+					return k;
+				}
 				return null;
 			});
 		} catch(Exception e) {
